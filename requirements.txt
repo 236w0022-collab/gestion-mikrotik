@@ -6,3 +6,5 @@ requests
 bcrypt
 passlib[bcrypt]
 sqlalchemy
+jinja2
+python-multipart
