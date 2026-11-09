@@ -1,4 +1,7 @@
-from fastapi import FastAPI, Depends, HTTPException, status
+import os
+from fastapi import FastAPI, Depends, Form, Request, status, HTTPException
+from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from typing import List
 
@@ -6,19 +9,72 @@ import models
 import schemas
 from database import engine, get_db
 
-# Crea las tablas automáticamente si no existen
+# Crear tablas en la base de datos automáticamente si no existen
 models.Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="Mi Proyecto Mikrotik / WISP API")
+app = FastAPI(title="Panel WISP - Red Comunitaria Josefinas")
 
-@app.get("/")
-def read_root():
-    return {"status": "ok", "message": "API conectada a PostgreSQL exitosamente"}
+# Configurar carpeta de plantillas HTML
+templates = Jinja2Templates(directory="templates")
 
-# --- ENDPOINTS DE CLIENTES ---
+# --- RUTAS DE NAVEGACIÓN Y ACCESO ---
 
-@app.post("/clientes/", response_model=schemas.ClienteResponse, status_code=status.HTTP_201_CREATED)
-def crear_cliente(cliente: schemas.ClienteCreate, db: Session = Depends(get_db)):
+# 1. La portada raíz enruta directo al login
+@app.get("/", response_class=HTMLResponse)
+def root(request: Request):
+    return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
+
+# 2. Pantalla de login
+@app.get("/login", response_class=HTMLResponse)
+def show_login(request: Request):
+    if request.cookies.get("session_user"):
+        return RedirectResponse(url="/dashboard", status_code=status.HTTP_302_FOUND)
+    return templates.TemplateResponse("login.html", {"request": request, "error": None})
+
+# 3. Procesar el formulario de inicio de sesión
+@app.post("/login", response_class=HTMLResponse)
+def process_login(
+    request: Request,
+    username: str = Form(...),
+    password: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    user = db.query(models.User).filter(models.User.username == username).first()
+
+    if not user or user.password_hash != password:
+        return templates.TemplateResponse(
+            "login.html",
+            {"request": request, "error": "Usuario o contraseña incorrectos"},
+            status_code=status.HTTP_401_UNAUTHORIZED
+        )
+
+    response = RedirectResponse(url="/dashboard", status_code=status.HTTP_302_FOUND)
+    response.set_cookie(key="session_user", value=user.username, httponly=True)
+    return response
+
+# 4. Panel administrativo protegido (panelad.html)
+@app.get("/dashboard", response_class=HTMLResponse)
+def show_dashboard(request: Request):
+    session_user = request.cookies.get("session_user")
+    if not session_user:
+        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
+    return templates.TemplateResponse("panelad.html", {"request": request, "usuario": session_user})
+
+# 5. Cerrar sesión
+@app.get("/logout")
+def logout():
+    response = RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
+    response.delete_cookie(key="session_user")
+    return response
+
+# --- API REST DE CLIENTES (Para que panelad.html consuma datos) ---
+
+@app.get("/api/clientes", response_model=List[schemas.ClienteResponse])
+def obtener_clientes(db: Session = Depends(get_db)):
+    return db.query(models.Cliente).all()
+
+@app.post("/api/clientes", response_model=schemas.ClienteResponse)
+def registrar_cliente(cliente: schemas.ClienteCreate, db: Session = Depends(get_db)):
     nuevo_cliente = models.Cliente(
         nombre=cliente.nombre,
         telefono=cliente.telefono,
@@ -30,24 +86,3 @@ def crear_cliente(cliente: schemas.ClienteCreate, db: Session = Depends(get_db))
     db.commit()
     db.refresh(nuevo_cliente)
     return nuevo_cliente
-
-@app.get("/clientes/", response_model=List[schemas.ClienteResponse])
-def listar_clientes(db: Session = Depends(get_db)):
-    return db.query(models.Cliente).all()
-
-# --- ENDPOINTS DE USUARIOS ---
-
-@app.post("/users/", response_model=schemas.UserResponse, status_code=status.HTTP_201_CREATED)
-def crear_usuario(usuario: schemas.UserCreate, db: Session = Depends(get_db)):
-    usuario_existente = db.query(models.User).filter(models.User.username == usuario.username).first()
-    if usuario_existente:
-        raise HTTPException(status_code=400, detail="El nombre de usuario ya está registrado")
-    
-    nuevo_usuario = models.User(
-        username=usuario.username,
-        password_hash=usuario.password  # En producción se recomienda usar hash (bcrypt)
-    )
-    db.add(nuevo_usuario)
-    db.commit()
-    db.refresh(nuevo_usuario)
-    return nuevo_usuario
