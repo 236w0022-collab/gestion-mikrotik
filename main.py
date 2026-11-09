@@ -9,27 +9,31 @@ import models
 import schemas
 from database import engine, get_db
 
-# Crear tablas en la base de datos automáticamente si no existen
+# Crear tablas en PostgreSQL automáticamente si no existen
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Panel WISP - Red Comunitaria Josefinas")
 
-# Configurar carpeta de plantillas HTML
+# Configurar directorio de plantillas HTML
 templates = Jinja2Templates(directory="templates")
 
 # --- RUTAS DE NAVEGACIÓN Y ACCESO ---
 
-# 1. La portada raíz enruta directo al login
+# 1. La portada raíz redirige al login
 @app.get("/", response_class=HTMLResponse)
 def root(request: Request):
     return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
 
-# 2. Pantalla de login
+# 2. Pantalla de login (muestra login.html)
 @app.get("/login", response_class=HTMLResponse)
 def show_login(request: Request):
     if request.cookies.get("session_user"):
         return RedirectResponse(url="/dashboard", status_code=status.HTTP_302_FOUND)
-    return templates.TemplateResponse("login.html", {"request": request, "error": None})
+    
+    return templates.TemplateResponse(
+        name="login.html",
+        context={"request": request, "error": None}
+    )
 
 # 3. Procesar el formulario de inicio de sesión
 @app.post("/login", response_class=HTMLResponse)
@@ -43,8 +47,11 @@ def process_login(
 
     if not user or user.password_hash != password:
         return templates.TemplateResponse(
-            "login.html",
-            {"request": request, "error": "Usuario o contraseña incorrectos"},
+            name="login.html",
+            context={
+                "request": request,
+                "error": "Usuario o contraseña incorrectos"
+            },
             status_code=status.HTTP_401_UNAUTHORIZED
         )
 
@@ -52,13 +59,17 @@ def process_login(
     response.set_cookie(key="session_user", value=user.username, httponly=True)
     return response
 
-# 4. Panel administrativo protegido (panelad.html)
+# 4. Panel administrativo protegido (muestra panelad.html)
 @app.get("/dashboard", response_class=HTMLResponse)
 def show_dashboard(request: Request):
     session_user = request.cookies.get("session_user")
     if not session_user:
         return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
-    return templates.TemplateResponse("panelad.html", {"request": request, "usuario": session_user})
+    
+    return templates.TemplateResponse(
+        name="panelad.html",
+        context={"request": request, "usuario": session_user}
+    )
 
 # 5. Cerrar sesión
 @app.get("/logout")
