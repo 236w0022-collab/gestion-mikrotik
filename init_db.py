@@ -1,10 +1,7 @@
 from database import engine, Base
-import models  # Importa las definiciones de tus tablas
+import models  # Carga la definición de tus modelos
 
-def init_db():
-    print("Conectando a PostgreSQL en Render y creando tablas...")
-    Base.metadata.create_all(bind=engine)
-    print("¡Tablas creadas exitosamente!")
-
-if __name__ == "__main__":
-    init_db()
+print("Conectando a Render y creando tablas...")
+# Esta línea crea las tablas físicas en PostgreSQL
+Base.metadata.create_all(bind=engine)
+print("¡Tablas creadas correctamente!")
