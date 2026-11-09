@@ -4,289 +4,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Control WISP - Red Comunitaria Josefinas</title>
-    <!-- Bootstrap 5 CSS -->
+    <title>Iniciar Sesión - Panel WISP</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
-            background-color: #f8f9fa;
+            background-color: #f4f6f9;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
         
-        .card {
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        .login-card {
+            width: 100%;
+            max-width: 400px;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            background: #fff;
         }
     </style>
 </head>
 
 <body>
 
-    <!-- NAV BAR SUPERIOR -->
-    <nav class="navbar navbar-dark bg-dark mb-4">
-        <div class="container-fluid">
-            <span class="navbar-brand mb-0 h1">🛰️ Sistema de Gestión WISP de Red comunitaria josefinas</span>
-            <div class="d-flex align-items-center text-white">
-                <span class="me-3 small">👤 <strong>{{ usuario }}</strong></span>
-                <a href="/logout" class="btn btn-outline-light btn-sm">Cerrar Sesión</a>
-            </div>
-        </div>
-    </nav>
-
-    <div class="container">
-
-        <!-- SECCIÓN: REGISTRO DE CLIENTES -->
-        <div class="row mb-4">
-            <div class="col-md-12">
-                <div class="card">
-                    <div class="card-header bg-primary text-white fw-bold">
-                        ➕ Registrar Nuevo Cliente
-                    </div>
-                    <div class="card-body">
-                        <form id="form-registrar">
-                            <div class="row g-3">
-                                <div class="col-md-3">
-                                    <label class="form-label fw-semibold">Nombre Completo</label>
-                                    <input type="text" class="form-control" id="nombre" placeholder="Ej. Juan Pérez" required>
-                                </div>
-                                <div class="col-md-2">
-                                    <label class="form-label fw-semibold">Teléfono</label>
-                                    <input type="text" class="form-control" id="telefono" placeholder="Ej. 123456789" required>
-                                </div>
-                                <div class="col-md-2">
-                                    <label class="form-label fw-semibold">Dirección IP</label>
-                                    <input type="text" class="form-control" id="ip_estatica" placeholder="Ej. 192.168.88.50" required>
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label fw-semibold">Plan de Internet</label>
-                                    <select class="form-select" id="plan_id" required>
-                                        <option value="" disabled selected>Selecciona un plan...</option>
-                                        {% for plan in planes %}
-                                            <option value="{{ plan.id }}">{{ plan.nombre }} ({{ plan.velocidad_bajada }})</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                                <div class="col-md-2">
-                                    <label class="form-label fw-semibold">Fecha de Corte</label>
-                                    <input type="date" class="form-control" id="fecha_corte" required>
-                                </div>
-                            </div>
-                            <div class="mt-3 text-end">
-                                <button type="submit" class="btn btn-success fw-bold">Guardar y Sincronizar MikroTik</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
+    <div class="login-card">
+        <div class="text-center mb-4">
+            <h4 class="fw-bold">🔐 Acceso Administrativo</h4>
+            <p class="text-muted small">Red Comunitaria Josefinas</p>
         </div>
 
-        <!-- SECCIÓN: TABLA DE CLIENTES -->
-        <div class="row">
-            <div class="col-md-12">
-                <div class="card">
-                    <div class="card-header bg-dark text-white fw-bold d-flex justify-content-between align-items-center">
-                        <span>📋 Lista de Clientes Registrados</span>
-                        <span class="badge bg-secondary">{{ clientes|length }} Clientes</span>
-                    </div>
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table table-hover table-striped mb-0 align-middle">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>Nombre</th>
-                                        <th>Teléfono</th>
-                                        <th>IP Estática</th>
-                                        <th>Plan Contratado</th>
-                                        <th>Fecha Corte</th>
-                                        <th>Estado</th>
-                                        <th class="text-center">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for cliente in clientes %}
-                                    <tr>
-                                        <td>{{ cliente.id }}</td>
-                                        <td class="fw-bold">{{ cliente.nombre }}</td>
-                                        <td>{{ cliente.telefono }}</td>
-                                        <td><code>{{ cliente.ip_estatica }}</code></td>
-                                        <td><span class="badge bg-info text-dark">{{ cliente.nombre_plan or 'Sin Plan' }}</span></td>
-                                        <td>{{ cliente.fecha_corte }}</td>
-                                        <td>
-                                            {% if cliente.estado == 'Activo' %}
-                                            <span class="badge bg-success">Activo</span> {% else %}
-                                            <span class="badge bg-danger">Suspendido</span> {% endif %}
-                                        </td>
-                                        <td class="text-center">
-                                            {% if cliente.estado == 'Activo' %}
-                                            <button class="btn btn-warning btn-sm fw-bold" onclick="cortarServicio('{{ cliente.ip_estatica }}')">🚫 Cortar</button> {% else %}
-                                            <button class="btn btn-success btn-sm fw-bold" onclick="reactivarServicio('{{ cliente.ip_estatica }}')">✅ Reactivar</button> {% endif %}
-                                            <button class="btn btn-primary btn-sm fw-bold" onclick="abrirModalEditar('{{ cliente.id }}', '{{ cliente.nombre }}', '{{ cliente.plan_id }}', '{{ cliente.fecha_corte }}')">✏️ Editar</button>
-                                            <button class="btn btn-danger btn-sm fw-bold" onclick="eliminarCliente('{{ cliente.id }}', '{{ cliente.ip_estatica }}', '{{ cliente.nombre }}')">🗑️ Eliminar</button>
-                                        </td>
-                                    </tr>
-                                    {% else %}
-                                    <tr>
-                                        <td colspan="8" class="text-center text-muted py-4">No hay clientes registrados en el sistema.</td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        {% if error %}
+        <div class="alert alert-danger py-2" role="alert">
+            <small>{{ error }}</small>
         </div>
+        {% endif %}
 
+        <form action="/login" method="POST">
+            <div class="mb-3">
+                <label for="username" class="form-label">Usuario</label>
+                <input type="text" class="form-control" id="username" name="username" required autofocus placeholder="Ej. admin">
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">Contraseña</label>
+                <input type="password" class="form-control" id="password" name="password" required placeholder="••••••••">
+            </div>
+            <button type="submit" class="btn btn-primary w-100 py-2 mt-2 fw-bold">Entrar al Sistema</button>
+        </form>
     </div>
 
-    <!-- MODAL EDITAR CLIENTE -->
-    <div class="modal fade" id="modalEditar" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title fw-bold" id="modalEditarTitulo">Editar Cliente</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="form-editar">
-                        <input type="hidden" id="edit_cliente_id">
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Nombre del Cliente</label>
-                            <input type="text" class="form-control" id="edit_nombre" readonly>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Cambiar Plan</label>
-                            <select class="form-select" id="edit_plan_id" required>
-                                {% for plan in planes %}
-                                    <option value="{{ plan.id }}">{{ plan.nombre }} ({{ plan.velocidad_bajada }})</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Nueva Fecha de Corte</label>
-                            <input type="date" class="form-control" id="edit_fecha_corte" required>
-                        </div>
-                        <div class="text-end">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit" class="btn btn-primary fw-bold">Actualizar Cliente</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Bootstrap 5 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-    <script>
-        // Registrar Cliente
-        document.getElementById('form-registrar').addEventListener('submit', async(e) => {
-            e.preventDefault();
-            const data = {
-                nombre: document.getElementById('nombre').value,
-                telefono: document.getElementById('telefono').value,
-                ip_estatica: document.getElementById('ip_estatica').value,
-                plan_id: parseInt(document.getElementById('plan_id').value),
-                fecha_corte: document.getElementById('fecha_corte').value
-            };
-
-            const response = await fetch('/clientes/registrar', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(data)
-            });
-
-            const res = await response.json();
-            if (response.ok) {
-                alert(res.mensaje);
-                location.reload();
-            } else {
-                alert("Error: " + (res.detail || "No se pudo registrar"));
-            }
-        });
-
-        // Cortar Servicio
-        async function cortarServicio(ip) {
-            if (!confirm(`¿Estás seguro de cortar el servicio a la IP ${ip}?`)) return;
-            const response = await fetch(`/clientes/cortar?ip_cliente=${ip}`, {
-                method: 'POST'
-            });
-            const res = await response.json();
-            if (response.ok) {
-                alert(res.mensaje);
-                location.reload();
-            } else {
-                alert("Error: " + res.detail);
-            }
-        }
-
-        // Reactivar Servicio
-        async function reactivarServicio(ip) {
-            if (!confirm(`¿Estás seguro de reactivar el servicio a la IP ${ip}?`)) return;
-            const response = await fetch(`/clientes/reactivar?ip_cliente=${ip}`, {
-                method: 'POST'
-            });
-            const res = await response.json();
-            if (response.ok) {
-                alert(res.mensaje);
-                location.reload();
-            } else {
-                alert("Error: " + res.detail);
-            }
-        }
-
-        // Abrir Modal de Edición
-        let modalEditarInstance;
-
-        function abrirModalEditar(id, nombre, plan_id, fecha_corte) {
-            document.getElementById('edit_cliente_id').value = id;
-            document.getElementById('edit_nombre').value = nombre;
-            document.getElementById('edit_plan_id').value = plan_id;
-            document.getElementById('edit_fecha_corte').value = fecha_corte;
-
-            modalEditarInstance = new bootstrap.Modal(document.getElementById('modalEditar'));
-            modalEditarInstance.show();
-        }
-
-        // Guardar Cambios de Edición
-        document.getElementById('form-editar').addEventListener('submit', async(e) => {
-            e.preventDefault();
-            const id = document.getElementById('edit_cliente_id').value;
-            const plan_id = document.getElementById('edit_plan_id').value;
-            const fecha_corte = document.getElementById('edit_fecha_corte').value;
-
-            const response = await fetch(`/clientes/modificar/${id}?plan_id=${plan_id}&fecha_corte=${fecha_corte}`, {
-                method: 'POST'
-            });
-
-            const res = await response.json();
-            if (response.ok) {
-                alert(res.mensaje);
-                location.reload();
-            } else {
-                alert("Error: " + res.detail);
-            }
-        });
-
-        // Eliminar Cliente
-        async function eliminarCliente(id, ip, nombre) {
-            if (!confirm(`¿Deseas ELIMINAR permanentemente a ${nombre} (${ip})?`)) return;
-
-            const response = await fetch(`/clientes/eliminar/${id}?ip_cliente=${ip}`, {
-                method: 'DELETE'
-            });
-
-            const res = await response.json();
-            if (response.ok) {
-                alert(res.mensaje);
-                location.reload();
-            } else {
-                alert("Error: " + res.detail);
-            }
-        }
-    </script>
 </body>
 
 </html>
