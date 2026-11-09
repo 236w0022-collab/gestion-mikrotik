@@ -10,3 +10,4 @@ jinja2
 python-multipart
 routeros_api
 itsdangerous
+psycopg2-binary
