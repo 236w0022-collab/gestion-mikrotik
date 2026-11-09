@@ -8,6 +8,7 @@ passlib[bcrypt]
 sqlalchemy
 jinja2
 python-multipart
-routeros_api
+routeros-api
 itsdangerous
 psycopg2-binary
+psycopg[binary]
