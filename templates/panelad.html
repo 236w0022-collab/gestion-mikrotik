@@ -44,7 +44,7 @@
                         <div class="col-md-6">
                             <label class="form-label fw-bold">Plan de Internet</label>
                             <select id="plan_id" class="form-select" required>
-                                <option value="" selected disabled>Cargando planes...</option>
+                                <option value="" selected disabled>Selecciona un plan...</option>
                             </select>
                         </div>
                         <div class="col-md-6">
@@ -91,11 +91,13 @@
     <script>
         let mapaPlanes = {};
 
-        // 1. Cargar planes de la API e insertarlos en el desplegable (<select>)
         async function cargarPlanes() {
             try {
                 const res = await fetch('/api/planes');
                 const planes = await res.json();
+
+                const selectEl = document.getElementById('plan_id');
+                if (!selectEl) return;
 
                 let selectHtml = '<option value="" selected disabled>Selecciona un plan...</option>';
                 planes.forEach(p => {
@@ -103,14 +105,12 @@
                     selectHtml += `<option value="${p.id}">${p.nombre}</option>`;
                 });
 
-                document.getElementById('plan_id').innerHTML = selectHtml;
+                selectEl.innerHTML = selectHtml;
             } catch (err) {
                 console.error("Error al cargar planes:", err);
-                document.getElementById('plan_id').innerHTML = '<option value="">Error al cargar planes</option>';
             }
         }
 
-        // 2. Cargar clientes de la base de datos
         async function cargarClientes() {
             try {
                 const res = await fetch('/api/clientes');
@@ -142,7 +142,6 @@
             }
         }
 
-        // 3. Registrar un nuevo cliente al enviar el formulario
         document.getElementById('formCliente').addEventListener('submit', async(e) => {
             e.preventDefault();
 
@@ -170,7 +169,6 @@
             }
         });
 
-        // Inicializar al cargar la página
         document.addEventListener('DOMContentLoaded', async() => {
             await cargarPlanes();
             await cargarClientes();
