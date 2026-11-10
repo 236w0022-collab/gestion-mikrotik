@@ -5,184 +5,148 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel de Control WISP - Red Comunitaria Josefinas</title>
-    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body {
-            background-color: #f8f9fa;
-        }
-        
-        .card {
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-    </style>
 </head>
 
-<body>
+<body class="bg-light">
 
-    <!-- NAV BAR SUPERIOR -->
-    <nav class="navbar navbar-dark bg-dark mb-4">
-        <div class="container-fluid">
-            <span class="navbar-brand mb-0 h1">🛰️ Sistema de Gestión WISP de Red comunitaria josefinas</span>
-            <div class="d-flex align-items-center text-white">
-                <span class="me-3 small">👤 <strong>{{ usuario }}</strong></span>
-                <a href="/logout" class="btn btn-outline-light btn-sm">Cerrar Sesión</a>
-            </div>
+    <!-- Header / Navbar -->
+    <nav class="navbar navbar-dark bg-dark px-4">
+        <span class="navbar-brand mb-0 h1">🎏 Sistema de Gestión WISP de Red comunitaria josefinas</span>
+        <div>
+            <span class="text-white me-3">👤 <strong>{{ usuario }}</strong></span>
+            <a href="/logout" class="btn btn-outline-light btn-sm">Cerrar Sesión</a>
         </div>
     </nav>
 
-    <div class="container">
+    <div class="container mt-4">
 
-        <!-- SECCIÓN: REGISTRO DE CLIENTES -->
-        <div class="row mb-4">
-            <div class="col-md-12">
-                <div class="card">
-                    <div class="card-header bg-primary text-white fw-bold">
-                        ➕ Registrar Nuevo Cliente
-                    </div>
-                    <div class="card-body">
-                        <form id="form-registrar">
-                            <div class="row g-3">
-                                <div class="col-md-3">
-                                    <label class="form-label fw-semibold">Nombre Completo</label>
-                                    <input type="text" class="form-control" id="nombre" placeholder="Ej. Juan Pérez" required>
-                                </div>
-                                <div class="col-md-2">
-                                    <label class="form-label fw-semibold">Teléfono</label>
-                                    <input type="text" class="form-control" id="telefono" placeholder="Ej. 123456789" required>
-                                </div>
-                                <div class="col-md-2">
-                                    <label class="form-label fw-semibold">Dirección IP</label>
-                                    <input type="text" class="form-control" id="ip_estatica" placeholder="Ej. 192.168.88.50" required>
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label fw-semibold">Plan de Internet</label>
-                                    <select class="form-select" id="plan_id" required>
-                                        <option value="" disabled selected>Selecciona un plan...</option>
-                                        {% for plan in planes %}
-                                            <option value="{{ plan.id }}">{{ plan.nombre }} ({{ plan.velocidad_bajada }})</option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                                <div class="col-md-2">
-                                    <label class="form-label fw-semibold">Fecha de Corte</label>
-                                    <input type="date" class="form-control" id="fecha_corte" required>
-                                </div>
-                            </div>
-                            <div class="mt-3 text-end">
-                                <button type="submit" class="btn btn-success fw-bold">Guardar y Sincronizar MikroTik</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
+        <!-- Formulario de Registro -->
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header bg-primary text-white fw-bold">
+                ➕ Registrar Nuevo Cliente
             </div>
-        </div>
-
-        <!-- SECCIÓN: TABLA DE CLIENTES -->
-        <div class="row">
-            <div class="col-md-12">
-                <div class="card">
-                    <div class="card-header bg-dark text-white fw-bold d-flex justify-content-between align-items-center">
-                        <span>📋 Lista de Clientes Registrados</span>
-                        <span class="badge bg-secondary">{{ clientes|length }} Clientes</span>
-                    </div>
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table table-hover table-striped mb-0 align-middle">
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>Nombre</th>
-                                        <th>Teléfono</th>
-                                        <th>IP Estática</th>
-                                        <th>Plan Contratado</th>
-                                        <th>Fecha Corte</th>
-                                        <th>Estado</th>
-                                        <th class="text-center">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% for cliente in clientes %}
-                                    <tr>
-                                        <td>{{ cliente.id }}</td>
-                                        <td class="fw-bold">{{ cliente.nombre }}</td>
-                                        <td>{{ cliente.telefono }}</td>
-                                        <td><code>{{ cliente.ip_estatica }}</code></td>
-                                        <td><span class="badge bg-info text-dark">{{ cliente.nombre_plan or 'Sin Plan' }}</span></td>
-                                        <td>{{ cliente.fecha_corte }}</td>
-                                        <td>
-                                            {% if cliente.estado == 'Activo' %}
-                                            <span class="badge bg-success">Activo</span> {% else %}
-                                            <span class="badge bg-danger">Suspendido</span> {% endif %}
-                                        </td>
-                                        <td class="text-center">
-                                            {% if cliente.estado == 'Activo' %}
-                                            <button class="btn btn-warning btn-sm fw-bold" onclick="cortarServicio('{{ cliente.ip_estatica }}')">🚫 Cortar</button> {% else %}
-                                            <button class="btn btn-success btn-sm fw-bold" onclick="reactivarServicio('{{ cliente.ip_estatica }}')">✅ Reactivar</button> {% endif %}
-                                            <button class="btn btn-primary btn-sm fw-bold" onclick="abrirModalEditar('{{ cliente.id }}', '{{ cliente.nombre }}', '{{ cliente.plan_id }}', '{{ cliente.fecha_corte }}')">✏️ Editar</button>
-                                            <button class="btn btn-danger btn-sm fw-bold" onclick="eliminarCliente('{{ cliente.id }}', '{{ cliente.ip_estatica }}', '{{ cliente.nombre }}')">🗑️ Eliminar</button>
-                                        </td>
-                                    </tr>
-                                    {% else %}
-                                    <tr>
-                                        <td colspan="8" class="text-center text-muted py-4">No hay clientes registrados en el sistema.</td>
-                                    </tr>
-                                    {% endfor %}
-                                </tbody>
-                            </table>
+            <div class="card-body">
+                <form id="formCliente">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Nombre Completo</label>
+                            <input type="text" id="nombre" class="form-control" placeholder="Ej. Juan Pérez" required>
                         </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-    </div>
-
-    <!-- MODAL EDITAR CLIENTE -->
-    <div class="modal fade" id="modalEditar" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title fw-bold" id="modalEditarTitulo">Editar Cliente</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="form-editar">
-                        <input type="hidden" id="edit_cliente_id">
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Nombre del Cliente</label>
-                            <input type="text" class="form-control" id="edit_nombre" readonly>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Teléfono</label>
+                            <input type="text" id="telefono" class="form-control" placeholder="Ej. 123456789">
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Cambiar Plan</label>
-                            <select class="form-select" id="edit_plan_id" required>
-                                {% for plan in planes %}
-                                    <option value="{{ plan.id }}">{{ plan.nombre }} ({{ plan.velocidad_bajada }})</option>
-                                {% endfor %}
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Dirección IP</label>
+                            <input type="text" id="ip_estatica" class="form-control" placeholder="Ej. 192.168.88.50" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Plan de Internet</label>
+                            <select id="plan_id" class="form-select" required>
+                                <option value="" selected disabled>Cargando planes...</option>
                             </select>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold">Nueva Fecha de Corte</label>
-                            <input type="date" class="form-control" id="edit_fecha_corte" required>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Fecha de Corte</label>
+                            <input type="date" id="fecha_corte" class="form-control" required>
                         </div>
-                        <div class="text-end">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="submit" class="btn btn-primary fw-bold">Actualizar Cliente</button>
-                        </div>
-                    </form>
-                </div>
+                    </div>
+                    <div class="text-end mt-3">
+                        <button type="submit" class="btn btn-success fw-bold px-4">Guardar y Sincronizar MikroTik</button>
+                    </div>
+                </form>
             </div>
         </div>
+
+        <!-- Tabla de Clientes -->
+        <div class="card shadow-sm">
+            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                <span class="fw-bold">📋 Lista de Clientes Registrados</span>
+                <span class="badge bg-secondary" id="totalClientes">0 Clientes</span>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Nombre</th>
+                            <th>Teléfono</th>
+                            <th>IP Estática</th>
+                            <th>Plan Contratado</th>
+                            <th>Fecha Corte</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaClientes">
+                        <tr>
+                            <td colspan="6" class="text-center py-3">Cargando datos...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
     </div>
 
-    <!-- Bootstrap 5 JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
     <script>
-        // Registrar Cliente
-        document.getElementById('form-registrar').addEventListener('submit', async(e) => {
+        let mapaPlanes = {};
+
+        // 1. Cargar planes de la API e insertarlos en el desplegable (<select>)
+        async function cargarPlanes() {
+            try {
+                const res = await fetch('/api/planes');
+                const planes = await res.json();
+
+                let selectHtml = '<option value="" selected disabled>Selecciona un plan...</option>';
+                planes.forEach(p => {
+                    mapaPlanes[p.id] = p.nombre;
+                    selectHtml += `<option value="${p.id}">${p.nombre}</option>`;
+                });
+
+                document.getElementById('plan_id').innerHTML = selectHtml;
+            } catch (err) {
+                console.error("Error al cargar planes:", err);
+                document.getElementById('plan_id').innerHTML = '<option value="">Error al cargar planes</option>';
+            }
+        }
+
+        // 2. Cargar clientes de la base de datos
+        async function cargarClientes() {
+            try {
+                const res = await fetch('/api/clientes');
+                const clientes = await res.json();
+
+                document.getElementById('totalClientes').textContent = `${clientes.length} Clientes`;
+
+                let html = '';
+                if (clientes.length === 0) {
+                    html = '<tr><td colspan="6" class="text-center text-muted py-3">No hay clientes registrados en el sistema.</td></tr>';
+                } else {
+                    clientes.forEach(c => {
+                        const nombrePlan = mapaPlanes[c.plan_id] || `Plan #${c.plan_id}`;
+                        html += `
+                            <tr>
+                                <td>${c.id}</td>
+                                <td><strong>${c.nombre}</strong></td>
+                                <td>${c.telefono || 'N/A'}</td>
+                                <td><span class="badge bg-primary">${c.ip_estatica}</span></td>
+                                <td><span class="badge bg-info text-dark">${nombrePlan}</span></td>
+                                <td>${c.fecha_corte}</td>
+                            </tr>
+                        `;
+                    });
+                }
+                document.getElementById('tablaClientes').innerHTML = html;
+            } catch (err) {
+                console.error("Error al cargar clientes:", err);
+            }
+        }
+
+        // 3. Registrar un nuevo cliente al enviar el formulario
+        document.getElementById('formCliente').addEventListener('submit', async(e) => {
             e.preventDefault();
-            const data = {
+
+            const clienteData = {
                 nombre: document.getElementById('nombre').value,
                 telefono: document.getElementById('telefono').value,
                 ip_estatica: document.getElementById('ip_estatica').value,
@@ -190,102 +154,27 @@
                 fecha_corte: document.getElementById('fecha_corte').value
             };
 
-            const response = await fetch('/clientes/registrar', {
+            const response = await fetch('/api/clientes', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(data)
+                body: JSON.stringify(clienteData)
             });
 
-            const res = await response.json();
             if (response.ok) {
-                alert(res.mensaje);
-                location.reload();
+                document.getElementById('formCliente').reset();
+                await cargarClientes();
             } else {
-                alert("Error: " + (res.detail || "No se pudo registrar"));
+                alert("Error al registrar cliente. Revisa los datos ingresados.");
             }
         });
 
-        // Cortar Servicio
-        async function cortarServicio(ip) {
-            if (!confirm(`¿Estás seguro de cortar el servicio a la IP ${ip}?`)) return;
-            const response = await fetch(`/clientes/cortar?ip_cliente=${ip}`, {
-                method: 'POST'
-            });
-            const res = await response.json();
-            if (response.ok) {
-                alert(res.mensaje);
-                location.reload();
-            } else {
-                alert("Error: " + res.detail);
-            }
-        }
-
-        // Reactivar Servicio
-        async function reactivarServicio(ip) {
-            if (!confirm(`¿Estás seguro de reactivar el servicio a la IP ${ip}?`)) return;
-            const response = await fetch(`/clientes/reactivar?ip_cliente=${ip}`, {
-                method: 'POST'
-            });
-            const res = await response.json();
-            if (response.ok) {
-                alert(res.mensaje);
-                location.reload();
-            } else {
-                alert("Error: " + res.detail);
-            }
-        }
-
-        // Abrir Modal de Edición
-        let modalEditarInstance;
-
-        function abrirModalEditar(id, nombre, plan_id, fecha_corte) {
-            document.getElementById('edit_cliente_id').value = id;
-            document.getElementById('edit_nombre').value = nombre;
-            document.getElementById('edit_plan_id').value = plan_id;
-            document.getElementById('edit_fecha_corte').value = fecha_corte;
-
-            modalEditarInstance = new bootstrap.Modal(document.getElementById('modalEditar'));
-            modalEditarInstance.show();
-        }
-
-        // Guardar Cambios de Edición
-        document.getElementById('form-editar').addEventListener('submit', async(e) => {
-            e.preventDefault();
-            const id = document.getElementById('edit_cliente_id').value;
-            const plan_id = document.getElementById('edit_plan_id').value;
-            const fecha_corte = document.getElementById('edit_fecha_corte').value;
-
-            const response = await fetch(`/clientes/modificar/${id}?plan_id=${plan_id}&fecha_corte=${fecha_corte}`, {
-                method: 'POST'
-            });
-
-            const res = await response.json();
-            if (response.ok) {
-                alert(res.mensaje);
-                location.reload();
-            } else {
-                alert("Error: " + res.detail);
-            }
+        // Inicializar al cargar la página
+        document.addEventListener('DOMContentLoaded', async() => {
+            await cargarPlanes();
+            await cargarClientes();
         });
-
-        // Eliminar Cliente
-        async function eliminarCliente(id, ip, nombre) {
-            if (!confirm(`¿Deseas ELIMINAR permanentemente a ${nombre} (${ip})?`)) return;
-
-            const response = await fetch(`/clientes/eliminar/${id}?ip_cliente=${ip}`, {
-                method: 'DELETE'
-            });
-
-            const res = await response.json();
-            if (response.ok) {
-                alert(res.mensaje);
-                location.reload();
-            } else {
-                alert("Error: " + res.detail);
-            }
-        }
     </script>
 </body>
 
