@@ -30,9 +30,11 @@ def show_login(request: Request):
     if request.cookies.get("session_user"):
         return RedirectResponse(url="/dashboard", status_code=status.HTTP_302_FOUND)
     
+    # Sintaxis compatible: request, "nombre_plantilla.html", context_dict
     return templates.TemplateResponse(
+        request,
         "login.html",
-        {"request": request, "error": None}
+        {"error": None}
     )
 
 # 3. Procesar el formulario de inicio de sesión
@@ -47,8 +49,9 @@ def process_login(
 
     if not user or user.password_hash != password:
         return templates.TemplateResponse(
+            request,
             "login.html",
-            {"request": request, "error": "Usuario o contraseña incorrectos"},
+            {"error": "Usuario o contraseña incorrectos"},
             status_code=status.HTTP_401_UNAUTHORIZED
         )
 
@@ -64,8 +67,9 @@ def show_dashboard(request: Request):
         return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
     
     return templates.TemplateResponse(
+        request,
         "panelad.html",
-        {"request": request, "usuario": session_user}
+        {"usuario": session_user}
     )
 
 # 5. Cerrar sesión
