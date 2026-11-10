@@ -30,7 +30,6 @@ def show_login(request: Request):
     if request.cookies.get("session_user"):
         return RedirectResponse(url="/dashboard", status_code=status.HTTP_302_FOUND)
     
-    # Sintaxis compatible: request, "nombre_plantilla.html", context_dict
     return templates.TemplateResponse(
         request,
         "login.html",
@@ -79,7 +78,13 @@ def logout():
     response.delete_cookie(key="session_user")
     return response
 
-# --- API REST DE CLIENTES (Para que panelad.html consuma datos) ---
+# --- API REST DE PLANES ---
+
+@app.get("/api/planes", response_model=List[schemas.PlanResponse])
+def obtener_planes(db: Session = Depends(get_db)):
+    return db.query(models.Plan).order_by(models.Plan.id).all()
+
+# --- API REST DE CLIENTES ---
 
 @app.get("/api/clientes", response_model=List[schemas.ClienteResponse])
 def obtener_clientes(db: Session = Depends(get_db)):

@@ -8,6 +8,14 @@ class User(Base):
     username = Column(String(100), unique=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
 
+class Plan(Base):
+    __tablename__ = "planes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    nombre = Column(String(50), nullable=False)
+    velocidad_bajada = Column(Integer, nullable=False)
+    velocidad_subida = Column(Integer, nullable=False)
+
 class Cliente(Base):
     __tablename__ = "clientes"
 
