@@ -19,12 +19,10 @@ templates = Jinja2Templates(directory="templates")
 
 # --- RUTAS DE NAVEGACIÓN Y ACCESO ---
 
-# 1. La portada raíz redirige al login
 @app.get("/", response_class=HTMLResponse)
 def root(request: Request):
     return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
 
-# 2. Pantalla de login (muestra login.html)
 @app.get("/login", response_class=HTMLResponse)
 def show_login(request: Request):
     if request.cookies.get("session_user"):
@@ -36,7 +34,6 @@ def show_login(request: Request):
         {"error": None}
     )
 
-# 3. Procesar el formulario de inicio de sesión
 @app.post("/login", response_class=HTMLResponse)
 def process_login(
     request: Request,
@@ -58,7 +55,6 @@ def process_login(
     response.set_cookie(key="session_user", value=user.username, httponly=True)
     return response
 
-# 4. Panel administrativo protegido (muestra panelad.html)
 @app.get("/dashboard", response_class=HTMLResponse)
 def show_dashboard(request: Request):
     session_user = request.cookies.get("session_user")
@@ -71,7 +67,6 @@ def show_dashboard(request: Request):
         {"usuario": session_user}
     )
 
-# 5. Cerrar sesión
 @app.get("/logout")
 def logout():
     response = RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
@@ -88,7 +83,7 @@ def obtener_planes(db: Session = Depends(get_db)):
 
 @app.get("/api/clientes", response_model=List[schemas.ClienteResponse])
 def obtener_clientes(db: Session = Depends(get_db)):
-    return db.query(models.Cliente).all()
+    return db.query(models.Cliente).order_by(models.Cliente.id).all()
 
 @app.post("/api/clientes", response_model=schemas.ClienteResponse)
 def registrar_cliente(cliente: schemas.ClienteCreate, db: Session = Depends(get_db)):
@@ -97,9 +92,35 @@ def registrar_cliente(cliente: schemas.ClienteCreate, db: Session = Depends(get_
         telefono=cliente.telefono,
         ip_estatica=cliente.ip_estatica,
         fecha_corte=cliente.fecha_corte,
-        plan_id=cliente.plan_id
+        plan_id=cliente.plan_id,
+        activo=True
     )
     db.add(nuevo_cliente)
     db.commit()
     db.refresh(nuevo_cliente)
     return nuevo_cliente
+
+@app.put("/api/clientes/{cliente_id}", response_model=schemas.ClienteResponse)
+def editar_cliente(cliente_id: int, cliente_data: schemas.ClienteUpdate, db: Session = Depends(get_db)):
+    cliente = db.query(models.Cliente).filter(models.Cliente.id == cliente_id).first()
+    if not cliente:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+    
+    update_data = cliente_data.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(cliente, key, value)
+    
+    db.commit()
+    db.refresh(cliente)
+    return cliente
+
+@app.patch("/api/clientes/{cliente_id}/estado", response_model=schemas.ClienteResponse)
+def cambiar_estado_cliente(cliente_id: int, db: Session = Depends(get_db)):
+    cliente = db.query(models.Cliente).filter(models.Cliente.id == cliente_id).first()
+    if not cliente:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+    
+    cliente.activo = not cliente.activo
+    db.commit()
+    db.refresh(cliente)
+    return cliente

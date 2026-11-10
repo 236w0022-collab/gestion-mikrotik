@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Date
+from sqlalchemy import Column, Integer, String, Date, Boolean
 from database import Base
 
 class User(Base):
@@ -25,3 +25,4 @@ class Cliente(Base):
     ip_estatica = Column(String(45), nullable=False)
     fecha_corte = Column(Date, nullable=False)
     plan_id = Column(Integer, nullable=False)
+    activo = Column(Boolean, default=True, nullable=False)
