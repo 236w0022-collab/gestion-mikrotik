@@ -124,3 +124,32 @@ def cambiar_estado_cliente(cliente_id: int, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(cliente)
     return cliente
+    from pydantic import BaseModel
+
+class PlanUpdate(BaseModel):
+    nombre: str
+    velocidad_subida: str
+    velocidad_bajada: str
+
+class AdminCreate(BaseModel):
+    username: str
+    password: str
+
+@app.put("/api/planes/{plan_id}")
+def actualizar_plan(plan_id: int, datos: PlanUpdate, db: Session = Depends(get_db)):
+    plan = db.query(models.Plan).filter(models.Plan.id == plan_id).first()
+    if not plan:
+        raise HTTPException(status_code=404, detail="Plan no encontrado")
+    plan.nombre = datos.nombre
+    plan.velocidad_subida = datos.velocidad_subida
+    plan.velocidad_bajada = datos.velocidad_bajada
+    db.commit()
+    return {"mensaje": "Plan actualizado correctamente"}
+
+@app.post("/api/administradores")
+def crear_administrador(admin: AdminCreate, db: Session = Depends(get_db)):
+    # Ajusta 'models.Usuario' o 'models.Admin' según el nombre de tu tabla en models.py
+    nuevo = models.Usuario(username=admin.username, password=admin.password)
+    db.add(nuevo)
+    db.commit()
+    return {"mensaje": "Administrador creado"}
