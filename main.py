@@ -4,6 +4,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from typing import List
+from pydantic import BaseModel
 
 import models
 import schemas
@@ -17,11 +18,26 @@ app = FastAPI(title="Panel WISP - Red Comunitaria Josefinas")
 # Configurar directorio de plantillas HTML
 templates = Jinja2Templates(directory="templates")
 
+
+# --- MODELOS PYDANTIC ADICIONALES ---
+
+class PlanUpdate(BaseModel):
+    nombre: str
+    velocidad_subida: str
+    velocidad_bajada: str
+
+
+class AdminCreate(BaseModel):
+    username: str
+    password: str
+
+
 # --- RUTAS DE NAVEGACIÓN Y ACCESO ---
 
 @app.get("/", response_class=HTMLResponse)
 def root(request: Request):
     return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
+
 
 @app.get("/login", response_class=HTMLResponse)
 def show_login(request: Request):
@@ -33,6 +49,7 @@ def show_login(request: Request):
         "login.html",
         {"error": None}
     )
+
 
 @app.post("/login", response_class=HTMLResponse)
 def process_login(
@@ -55,6 +72,7 @@ def process_login(
     response.set_cookie(key="session_user", value=user.username, httponly=True)
     return response
 
+
 @app.get("/dashboard", response_class=HTMLResponse)
 def show_dashboard(request: Request):
     session_user = request.cookies.get("session_user")
@@ -67,11 +85,13 @@ def show_dashboard(request: Request):
         {"usuario": session_user}
     )
 
+
 @app.get("/logout")
 def logout():
     response = RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
     response.delete_cookie(key="session_user")
     return response
+
 
 # --- API REST DE PLANES ---
 
@@ -79,11 +99,25 @@ def logout():
 def obtener_planes(db: Session = Depends(get_db)):
     return db.query(models.Plan).order_by(models.Plan.id).all()
 
+
+@app.put("/api/planes/{plan_id}")
+def actualizar_plan(plan_id: int, datos: PlanUpdate, db: Session = Depends(get_db)):
+    plan = db.query(models.Plan).filter(models.Plan.id == plan_id).first()
+    if not plan:
+        raise HTTPException(status_code=404, detail="Plan no encontrado")
+    plan.nombre = datos.nombre
+    plan.velocidad_subida = datos.velocidad_subida
+    plan.velocidad_bajada = datos.velocidad_bajada
+    db.commit()
+    return {"mensaje": "Plan actualizado correctamente"}
+
+
 # --- API REST DE CLIENTES ---
 
 @app.get("/api/clientes", response_model=List[schemas.ClienteResponse])
 def obtener_clientes(db: Session = Depends(get_db)):
     return db.query(models.Cliente).order_by(models.Cliente.id).all()
+
 
 @app.post("/api/clientes", response_model=schemas.ClienteResponse)
 def registrar_cliente(cliente: schemas.ClienteCreate, db: Session = Depends(get_db)):
@@ -100,6 +134,7 @@ def registrar_cliente(cliente: schemas.ClienteCreate, db: Session = Depends(get_
     db.refresh(nuevo_cliente)
     return nuevo_cliente
 
+
 @app.put("/api/clientes/{cliente_id}", response_model=schemas.ClienteResponse)
 def editar_cliente(cliente_id: int, cliente_data: schemas.ClienteUpdate, db: Session = Depends(get_db)):
     cliente = db.query(models.Cliente).filter(models.Cliente.id == cliente_id).first()
@@ -114,6 +149,7 @@ def editar_cliente(cliente_id: int, cliente_data: schemas.ClienteUpdate, db: Ses
     db.refresh(cliente)
     return cliente
 
+
 @app.patch("/api/clientes/{cliente_id}/estado", response_model=schemas.ClienteResponse)
 def cambiar_estado_cliente(cliente_id: int, db: Session = Depends(get_db)):
     cliente = db.query(models.Cliente).filter(models.Cliente.id == cliente_id).first()
@@ -124,32 +160,23 @@ def cambiar_estado_cliente(cliente_id: int, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(cliente)
     return cliente
-    from pydantic import BaseModel
 
-class PlanUpdate(BaseModel):
-    nombre: str
-    velocidad_subida: str
-    velocidad_bajada: str
 
-class AdminCreate(BaseModel):
-    username: str
-    password: str
+# --- API REST DE ADMINISTRADORES ---
 
-@app.put("/api/planes/{plan_id}")
-def actualizar_plan(plan_id: int, datos: PlanUpdate, db: Session = Depends(get_db)):
-    plan = db.query(models.Plan).filter(models.Plan.id == plan_id).first()
-    if not plan:
-        raise HTTPException(status_code=404, detail="Plan no encontrado")
-    plan.nombre = datos.nombre
-    plan.velocidad_subida = datos.velocidad_subida
-    plan.velocidad_bajada = datos.velocidad_bajada
-    db.commit()
-    return {"mensaje": "Plan actualizado correctamente"}
+@app.get("/api/administradores")
+def listar_administradores(db: Session = Depends(get_db)):
+    usuarios = db.query(models.User).order_by(models.User.id).all()
+    return [{"id": u.id, "username": u.username} for u in usuarios]
+
 
 @app.post("/api/administradores")
 def crear_administrador(admin: AdminCreate, db: Session = Depends(get_db)):
-    # Ajusta 'models.Usuario' o 'models.Admin' según el nombre de tu tabla en models.py
-    nuevo = models.Usuario(username=admin.username, password=admin.password)
+    existente = db.query(models.User).filter(models.User.username == admin.username).first()
+    if existente:
+        raise HTTPException(status_code=400, detail="El usuario ya existe")
+    
+    nuevo = models.User(username=admin.username, password_hash=admin.password)
     db.add(nuevo)
     db.commit()
     return {"mensaje": "Administrador creado"}
