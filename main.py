@@ -24,7 +24,7 @@ templates = Jinja2Templates(directory="templates")
 
 # --- MODELOS PYDANTIC ADICIONALES ---
 
-class PlanUpdate(BaseModel):
+class PlanCreateOrUpdate(BaseModel):
     nombre: str
     velocidad_subida: str
     velocidad_bajada: str
@@ -103,8 +103,21 @@ def obtener_planes(db: Session = Depends(get_db)):
     return db.query(models.Plan).order_by(models.Plan.id).all()
 
 
+@app.post("/api/planes")
+def crear_plan(datos: PlanCreateOrUpdate, db: Session = Depends(get_db)):
+    nuevo_plan = models.Plan(
+        nombre=datos.nombre,
+        velocidad_subida=datos.velocidad_subida,
+        velocidad_bajada=datos.velocidad_bajada
+    )
+    db.add(nuevo_plan)
+    db.commit()
+    db.refresh(nuevo_plan)
+    return {"mensaje": "Plan creado correctamente", "id": nuevo_plan.id}
+
+
 @app.put("/api/planes/{plan_id}")
-def actualizar_plan(plan_id: int, datos: PlanUpdate, db: Session = Depends(get_db)):
+def actualizar_plan(plan_id: int, datos: PlanCreateOrUpdate, db: Session = Depends(get_db)):
     plan = db.query(models.Plan).filter(models.Plan.id == plan_id).first()
     if not plan:
         raise HTTPException(status_code=404, detail="Plan no encontrado")
@@ -163,6 +176,17 @@ def cambiar_estado_cliente(cliente_id: int, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(cliente)
     return cliente
+
+
+@app.delete("/api/clientes/{cliente_id}")
+def eliminar_cliente(cliente_id: int, db: Session = Depends(get_db)):
+    cliente = db.query(models.Cliente).filter(models.Cliente.id == cliente_id).first()
+    if not cliente:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+    
+    db.delete(cliente)
+    db.commit()
+    return {"mensaje": "Cliente eliminado correctamente"}
 
 
 # --- API REST DE ADMINISTRADORES ---

@@ -6,8 +6,15 @@
     <title>Panel de Control WISP - CASZARY TELECOMUNICACIONES</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
+        :root {
+            --caszary-red: #D91E2A;
+            --caszary-red-dark: #a8141e;
+            --caszary-black: #141414;
+            --caszary-dark: #1f1f1f;
+        }
+
         body {
-            background-color: #f4f6f9;
+            background-color: #f2f2f2;
             overflow-x: hidden;
             position: relative;
         }
@@ -29,34 +36,66 @@
             z-index: 0;
         }
 
-        /* Navbar Superior */
-        .navbar-custom { background-color: #212529; color: white; z-index: 1030; }
+        /* Navbar Superior Institucional */
+        .navbar-custom {
+            background-color: var(--caszary-black);
+            border-bottom: 3px solid var(--caszary-red);
+            color: white;
+            z-index: 1030;
+        }
+
+        /* Clases Institucionales Rojo / Negro */
+        .bg-caszary-red { background-color: var(--caszary-red) !important; color: #fff !important; }
+        .bg-caszary-black { background-color: var(--caszary-black) !important; color: #fff !important; }
+        .btn-caszary-red {
+            background-color: var(--caszary-red);
+            border-color: var(--caszary-red);
+            color: #fff;
+            font-weight: 600;
+        }
+        .btn-caszary-red:hover {
+            background-color: var(--caszary-red-dark);
+            border-color: var(--caszary-red-dark);
+            color: #fff;
+        }
+        .btn-caszary-black {
+            background-color: var(--caszary-black);
+            border-color: var(--caszary-black);
+            color: #fff;
+            font-weight: 600;
+        }
+        .btn-caszary-black:hover {
+            background-color: #333333;
+            color: #fff;
+        }
 
         /* Sidebar Izquierdo Desplegable */
         #sidebar {
             width: 260px;
-            min-height: calc(100vh - 56px);
-            background-color: #1c2024;
+            min-height: calc(100vh - 59px);
+            background-color: var(--caszary-dark);
             color: #fff;
             transition: margin-left 0.3s ease;
             position: fixed;
-            top: 56px;
+            top: 59px;
             left: 0;
             z-index: 1020;
         }
         #sidebar.collapsed { margin-left: -260px; }
         #sidebar .nav-link {
-            color: #adb5bd;
-            padding: 12px 20px;
-            border-bottom: 1px solid #2c3136;
+            color: #d1d1d1;
+            padding: 13px 20px;
+            border-bottom: 1px solid #2e2e2e;
             cursor: pointer;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            transition: background 0.2s;
         }
         #sidebar .nav-link:hover, #sidebar .nav-link.active {
-            background-color: #dc3545;
+            background-color: var(--caszary-red);
             color: #fff;
+            font-weight: 600;
         }
 
         /* Contenido Principal */
@@ -69,7 +108,10 @@
         }
         #main-content.expanded { margin-left: 0; }
 
-        .card { background-color: rgba(255, 255, 255, 0.94); }
+        .card {
+            background-color: rgba(255, 255, 255, 0.95);
+            border: 1px solid #dcdcdc;
+        }
 
         @media (max-width: 768px) {
             #sidebar { margin-left: -260px; }
@@ -90,7 +132,7 @@
         </div>
         <div class="d-flex align-items-center gap-3">
             <span>👤 <strong>{{ usuario }}</strong></span>
-            <a href="/logout" class="btn btn-outline-light btn-sm">Cerrar Sesión</a>
+            <a href="/logout" class="btn btn-caszary-red btn-sm">Cerrar Sesión</a>
         </div>
     </nav>
 
@@ -103,13 +145,13 @@
             </a>
             <a class="nav-link" onclick="mostrarSeccion('seccion-notificaciones', this)">
                 <span>🔔 Notificaciones</span>
-                <span class="badge bg-danger rounded-pill" id="badge-notif">0</span>
+                <span class="badge bg-light text-danger fw-bold rounded-pill" id="badge-notif">0</span>
             </a>
             <a class="nav-link" onclick="mostrarSeccion('seccion-administradores', this)">
                 <span>🛡️ Administradores</span>
             </a>
             <a class="nav-link" onclick="mostrarSeccion('seccion-paquetes', this)">
-                <span>🚀 Modificar Paquetes</span>
+                <span>🚀 Paquetes / Planes</span>
             </a>
         </nav>
     </div>
@@ -122,12 +164,12 @@
         <!-- ========================================================= -->
         <div id="seccion-clientes" class="seccion-panel">
 
-            <!-- Tarjeta Desplegable: Registrar Nuevo Cliente -->
+            <!-- Tarjeta Desplegable 1: Registrar Nuevo Cliente -->
             <div class="card shadow-sm mb-4">
-                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center"
+                <div class="card-header bg-caszary-red d-flex justify-content-between align-items-center"
                      style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#collapseRegistro">
                     <span class="fw-bold">➕ Registrar Nuevo Cliente</span>
-                    <span class="badge bg-light text-primary">Clic para desplegar / ocultar ▼</span>
+                    <span class="badge bg-white text-dark">Clic para desplegar / ocultar ▼</span>
                 </div>
                 <div id="collapseRegistro" class="collapse">
                     <div class="card-body">
@@ -153,39 +195,46 @@
                                 <input type="date" class="form-control" id="fecha_corte" required>
                             </div>
                             <div class="col-12 text-end">
-                                <button type="submit" class="btn btn-success px-4">Guardar y Sincronizar MikroTik</button>
+                                <button type="submit" class="btn btn-caszary-red px-4">Guardar y Sincronizar MikroTik</button>
                             </div>
                         </form>
                     </div>
                 </div>
             </div>
 
-            <!-- Tabla de Clientes + Barra Buscadora -->
+            <!-- Tarjeta Desplegable 2: Lista de Clientes Registrados + Barra Buscadora -->
             <div class="card shadow-sm">
-                <div class="card-header bg-dark text-white d-flex flex-wrap justify-content-between align-items-center gap-2">
-                    <span class="fw-bold">📑 Lista de Clientes Registrados</span>
+                <div class="card-header bg-caszary-black d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <div class="d-flex align-items-center gap-2" style="cursor: pointer;"
+                         data-bs-toggle="collapse" data-bs-target="#collapseListaClientes">
+                        <span class="fw-bold">📑 Lista de Clientes Registrados</span>
+                        <span class="badge bg-caszary-red">Desplegar / Ocultar ▼</span>
+                    </div>
+
                     <div class="d-flex align-items-center gap-2">
                         <input type="text" id="buscadorClientes" class="form-control form-control-sm"
                                style="width: 260px;" placeholder="🔍 Buscar por nombre, IP o teléfono...">
-                        <span class="badge bg-secondary" id="contadorClientes">0 Clientes</span>
+                        <span class="badge bg-light text-dark fw-bold" id="contadorClientes">0 Clientes</span>
                     </div>
                 </div>
-                <div class="card-body table-responsive p-0">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>ID</th>
-                                <th>Nombre</th>
-                                <th>Teléfono</th>
-                                <th>IP Estática</th>
-                                <th>Plan Contratado</th>
-                                <th>Fecha Corte</th>
-                                <th>Estado</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tablaClientes"></tbody>
-                    </table>
+                <div id="collapseListaClientes" class="collapse show">
+                    <div class="card-body table-responsive p-0">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nombre</th>
+                                    <th>Teléfono</th>
+                                    <th>IP Estática</th>
+                                    <th>Plan Contratado</th>
+                                    <th>Fecha Corte</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaClientes"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -195,7 +244,7 @@
         <!-- ========================================================= -->
         <div id="seccion-notificaciones" class="seccion-panel d-none">
             <div class="card shadow-sm">
-                <div class="card-header bg-warning text-dark fw-bold">
+                <div class="card-header bg-caszary-red fw-bold">
                     🔔 Alertas de Vencimiento y Cortes Pendientes
                 </div>
                 <div class="card-body">
@@ -212,7 +261,7 @@
             <div class="row g-4">
                 <div class="col-md-5">
                     <div class="card shadow-sm">
-                        <div class="card-header bg-dark text-white fw-bold">➕ Crear Nuevo Administrador</div>
+                        <div class="card-header bg-caszary-black fw-bold">➕ Crear Nuevo Administrador</div>
                         <div class="card-body">
                             <form id="formNuevoAdmin">
                                 <div class="mb-3">
@@ -223,14 +272,14 @@
                                     <label class="form-label fw-bold">Contraseña</label>
                                     <input type="password" class="form-control" id="admin_pass" required placeholder="********">
                                 </div>
-                                <button type="submit" class="btn btn-primary w-100">Registrar Administrador</button>
+                                <button type="submit" class="btn btn-caszary-red w-100">Registrar Administrador</button>
                             </form>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-7">
                     <div class="card shadow-sm">
-                        <div class="card-header bg-secondary text-white fw-bold">👥 Administradores Registrados</div>
+                        <div class="card-header bg-caszary-black fw-bold">👥 Administradores Registrados</div>
                         <div class="card-body">
                             <ul class="list-group" id="listaAdmins"></ul>
                         </div>
@@ -240,13 +289,39 @@
         </div>
 
         <!-- ========================================================= -->
-        <!-- SECCIÓN 4: MODIFICAR PAQUETES -->
+        <!-- SECCIÓN 4: AGREGAR Y MODIFICAR PAQUETES -->
         <!-- ========================================================= -->
         <div id="seccion-paquetes" class="seccion-panel d-none">
+            
+            <!-- Tarjeta para Agregar Nuevo Plan -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-caszary-red fw-bold">➕ Agregar Nuevo Paquete / Plan</div>
+                <div class="card-body">
+                    <form id="formNuevoPlan" class="row g-3 align-items-end">
+                        <div class="col-md-5">
+                            <label class="form-label fw-bold">Nombre del Plan</label>
+                            <input type="text" class="form-control" id="nuevo_plan_nombre" placeholder="Ej. Plan 30 Megas (Simétrico)" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-bold">Subida (Megas)</label>
+                            <input type="text" class="form-control" id="nuevo_plan_subida" placeholder="Ej. 30" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label fw-bold">Bajada (Megas)</label>
+                            <input type="text" class="form-control" id="nuevo_plan_bajada" placeholder="Ej. 30" required>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="submit" class="btn btn-caszary-black w-100">Agregar Plan</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Tabla para Modificar Paquetes Existentes -->
             <div class="card shadow-sm">
-                <div class="card-header bg-dark text-white fw-bold">🚀 Configurar Velocidades de Paquetes</div>
+                <div class="card-header bg-caszary-black fw-bold">🚀 Configurar Velocidades de Paquetes Existentes</div>
                 <div class="card-body table-responsive">
-                    <table class="table table-bordered align-middle">
+                    <table class="table table-bordered align-middle mb-0">
                         <thead class="table-light">
                             <tr>
                                 <th>ID</th>
@@ -265,14 +340,14 @@
     </div>
 
     <!-- ========================================================= -->
-    <!-- MODAL PARA EDITAR CLIENTE (CAMBIAR MEGAS / PLAN / IP / FECHA) -->
+    <!-- MODAL PARA EDITAR CLIENTE -->
     <!-- ========================================================= -->
     <div class="modal fade" id="modalEditarCliente" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
-                <div class="modal-header bg-warning text-dark">
+                <div class="modal-header bg-caszary-black">
                     <h5 class="modal-title fw-bold">✏️ Editar Servicio del Cliente</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <form id="formEditarCliente">
                     <div class="modal-body">
@@ -300,7 +375,7 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                        <button type="submit" class="btn btn-caszary-red">Guardar Cambios</button>
                     </div>
                 </form>
             </div>
@@ -364,7 +439,7 @@
             planesGlobal.forEach(p => {
                 const sub = p.velocidad_subida || p.subida || '';
                 const baj = p.velocidad_bajada || p.bajada || '';
-                const optionHTML = `<option value="${p.id}">${p.nombre} (${sub} / ${baj})</option>`;
+                const optionHTML = `<option value="${p.id}">${p.nombre} (${sub}M / ${baj}M)</option>`;
                 selectNuevo.innerHTML += optionHTML;
                 selectEditar.innerHTML += optionHTML;
             });
@@ -382,7 +457,7 @@
                     ? '<span class="badge bg-success">Activo</span>'
                     : '<span class="badge bg-danger">Desactivado</span>';
                 const btnEstado = c.activo
-                    ? `<button class="btn btn-outline-danger btn-sm" onclick="cambiarEstado(${c.id})">Desactivar</button>`
+                    ? `<button class="btn btn-outline-dark btn-sm" onclick="cambiarEstado(${c.id})">Desactivar</button>`
                     : `<button class="btn btn-outline-success btn-sm" onclick="cambiarEstado(${c.id})">Activar</button>`;
 
                 tbody.innerHTML += `
@@ -390,20 +465,36 @@
                         <td>${c.id}</td>
                         <td class="fw-bold">${c.nombre}</td>
                         <td>${c.telefono}</td>
-                        <td><span class="badge bg-primary">${c.ip_estatica}</span></td>
-                        <td><span class="badge bg-info text-dark">${nombrePlan}</span></td>
+                        <td><span class="badge bg-dark">${c.ip_estatica}</span></td>
+                        <td><span class="badge bg-secondary">${nombrePlan}</span></td>
                         <td>${c.fecha_corte}</td>
                         <td>${badgeEstado}</td>
-                        <td class="d-flex gap-1">
+                        <td class="d-flex flex-wrap gap-1">
                             <button class="btn btn-warning btn-sm fw-bold" onclick="abrirModalEditar(${c.id})">Editar</button>
                             ${btnEstado}
+                            <button class="btn btn-danger btn-sm fw-bold" onclick="eliminarCliente(${c.id}, '${c.nombre}')">Eliminar</button>
                         </td>
                     </tr>
                 `;
             });
         }
 
-        // Abrir Modal de Edición con datos del cliente
+        // Eliminar Cliente (con confirmación)
+        async function eliminarCliente(id, nombre) {
+            if (!confirm(`¿Estás seguro de eliminar permanentemente al cliente "${nombre}"? También se eliminará su regla en el MikroTik.`)) {
+                return;
+            }
+            const res = await fetch(`/api/clientes/${id}`, {
+                method: 'DELETE'
+            });
+            if (res.ok) {
+                cargarDatos();
+            } else {
+                alert('❌ Error al eliminar el cliente.');
+            }
+        }
+
+        // Abrir Modal de Edición
         function abrirModalEditar(id) {
             const cliente = clientesGlobal.find(c => c.id === id);
             if (!cliente) return;
@@ -470,7 +561,7 @@
                             <div>
                                 <strong>⚠️ ${c.nombre}</strong> (IP: ${c.ip_estatica}) — Fecha de corte: <strong>${c.fecha_corte}</strong>
                             </div>
-                            ${c.activo ? `<button class="btn btn-sm btn-danger" onclick="cambiarEstado(${c.id})">Cortar Servicio</button>` : '<span class="badge bg-secondary">Ya Cortado</span>'}
+                            ${c.activo ? `<button class="btn btn-sm btn-caszary-red" onclick="cambiarEstado(${c.id})">Cortar Servicio</button>` : '<span class="badge bg-dark">Ya Cortado</span>'}
                         </li>
                     `;
                 }
@@ -482,20 +573,42 @@
             }
         }
 
+        // Agregar Nuevo Plan
+        document.getElementById('formNuevoPlan').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const payload = {
+                nombre: document.getElementById('nuevo_plan_nombre').value,
+                velocidad_subida: document.getElementById('nuevo_plan_subida').value,
+                velocidad_bajada: document.getElementById('nuevo_plan_bajada').value
+            };
+            const res = await fetch('/api/planes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (res.ok) {
+                alert('✅ Nuevo plan agregado correctamente.');
+                e.target.reset();
+                cargarDatos();
+            } else {
+                alert('❌ Error al agregar el nuevo plan.');
+            }
+        });
+
         // Renderizar Tabla para Modificar Paquetes
         function renderTablaPlanes() {
             const tbody = document.getElementById('tablaPlanes');
             tbody.innerHTML = '';
             planesGlobal.forEach(p => {
-                const sub = p.velocidad_subida || p.subida || '5M';
-                const baj = p.velocidad_bajada || p.bajada || '10M';
+                const sub = p.velocidad_subida || p.subida || '5';
+                const baj = p.velocidad_bajada || p.bajada || '10';
                 tbody.innerHTML += `
                     <tr>
                         <td>${p.id}</td>
                         <td><input type="text" class="form-control form-control-sm" id="plan_nom_${p.id}" value="${p.nombre}"></td>
                         <td><input type="text" class="form-control form-control-sm" id="plan_sub_${p.id}" value="${sub}"></td>
                         <td><input type="text" class="form-control form-control-sm" id="plan_baj_${p.id}" value="${baj}"></td>
-                        <td><button class="btn btn-primary btn-sm" onclick="guardarPlan(${p.id})">Guardar Cambios</button></td>
+                        <td><button class="btn btn-caszary-red btn-sm" onclick="guardarPlan(${p.id})">Guardar Cambios</button></td>
                     </tr>
                 `;
             });
@@ -560,7 +673,7 @@
                         lista.innerHTML += `
                             <li class="list-group-item d-flex justify-content-between align-items-center">
                                 <span>👤 <strong>${a.username}</strong></span>
-                                <span class="badge bg-success">Activo</span>
+                                <span class="badge bg-dark">Activo</span>
                             </li>
                         `;
                     });
