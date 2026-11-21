@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <title>Panel de Control WISP - CASZARY TELECOMUNICACIONES</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
@@ -19,7 +19,7 @@
             position: relative;
         }
 
-        /* Marca de agua con el logo de CASZARY TELECOMUNICACIONES */
+        /* Marca de agua más nítida con el logo de CASZARY TELECOMUNICACIONES */
         body::before {
             content: "";
             position: fixed;
@@ -30,8 +30,8 @@
             background-image: url('/static/logo_caszary.jpg');
             background-repeat: no-repeat;
             background-position: center center;
-            background-size: 50%;
-            opacity: 0.08;
+            background-size: 55%;
+            opacity: 0.22;
             pointer-events: none;
             z-index: 0;
         }
@@ -79,12 +79,13 @@
             position: fixed;
             top: 59px;
             left: 0;
-            z-index: 1020;
+            z-index: 1025;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.3);
         }
         #sidebar.collapsed { margin-left: -260px; }
         #sidebar .nav-link {
             color: #d1d1d1;
-            padding: 13px 20px;
+            padding: 14px 20px;
             border-bottom: 1px solid #2e2e2e;
             cursor: pointer;
             display: flex;
@@ -108,31 +109,65 @@
         }
         #main-content.expanded { margin-left: 0; }
 
+        /* Tarjetas ligeramente translúcidas para dejar lucir el logo de fondo */
         .card {
-            background-color: rgba(255, 255, 255, 0.95);
+            background-color: rgba(255, 255, 255, 0.88);
             border: 1px solid #dcdcdc;
         }
+        .table {
+            --bs-table-bg: transparent;
+        }
 
+        /* Adaptación Responsive para Celulares y Tablets */
         @media (max-width: 768px) {
-            #sidebar { margin-left: -260px; }
+            #sidebar {
+                margin-left: -260px;
+                top: 54px;
+                min-height: calc(100vh - 54px);
+            }
             #sidebar.show-mobile { margin-left: 0; }
-            #main-content { margin-left: 0; }
-            body::before { background-size: 85%; }
+            #main-content {
+                margin-left: 0;
+                padding: 12px;
+            }
+            body::before {
+                background-size: 90%;
+                opacity: 0.20;
+            }
+            .brand-text {
+                font-size: 0.85rem !important;
+                max-width: 145px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .user-label {
+                display: none;
+            }
+            .search-box-mobile {
+                width: 100% !important;
+                margin-top: 6px;
+            }
+            .table td, .table th {
+                white-space: nowrap;
+                font-size: 0.88rem;
+                padding: 0.55rem 0.65rem;
+            }
         }
     </style>
 </head>
 <body>
 
     <!-- Barra Superior -->
-    <nav class="navbar navbar-custom px-3 sticky-top">
+    <nav class="navbar navbar-custom px-2 px-md-3 sticky-top">
         <div class="d-flex align-items-center">
-            <button class="btn btn-outline-light me-3" id="btnToggleMenu">☰</button>
-            <img src="/static/logo_caszary.jpg" alt="Logo" height="34" class="me-2 rounded bg-white p-1">
-            <span class="navbar-brand mb-0 h5 text-white fw-bold">CASZARY TELECOMUNICACIONES</span>
+            <button class="btn btn-outline-light btn-sm me-2 me-md-3" id="btnToggleMenu">☰</button>
+            <img src="/static/logo_caszary.jpg" alt="Logo" height="30" class="me-2 rounded bg-white p-1">
+            <span class="navbar-brand mb-0 h6 text-white fw-bold brand-text">CASZARY TELECOMUNICACIONES</span>
         </div>
-        <div class="d-flex align-items-center gap-3">
-            <span>👤 <strong>{{ usuario }}</strong></span>
-            <a href="/logout" class="btn btn-caszary-red btn-sm">Cerrar Sesión</a>
+        <div class="d-flex align-items-center gap-2 gap-md-3">
+            <span class="user-label">👤 <strong>{{ usuario }}</strong></span>
+            <a href="/logout" class="btn btn-caszary-red btn-sm">Salir</a>
         </div>
     </nav>
 
@@ -165,37 +200,37 @@
         <div id="seccion-clientes" class="seccion-panel">
 
             <!-- Tarjeta Desplegable 1: Registrar Nuevo Cliente -->
-            <div class="card shadow-sm mb-4">
+            <div class="card shadow-sm mb-3 mb-md-4">
                 <div class="card-header bg-caszary-red d-flex justify-content-between align-items-center"
                      style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#collapseRegistro">
                     <span class="fw-bold">➕ Registrar Nuevo Cliente</span>
-                    <span class="badge bg-white text-dark">Clic para desplegar / ocultar ▼</span>
+                    <span class="badge bg-white text-dark">Desplegar ▼</span>
                 </div>
                 <div id="collapseRegistro" class="collapse">
                     <div class="card-body">
                         <form id="formNuevoCliente" class="row g-3">
-                            <div class="col-md-4">
+                            <div class="col-12 col-md-4">
                                 <label class="form-label fw-bold">Nombre Completo</label>
                                 <input type="text" class="form-control" id="nombre" placeholder="Ej. Juan Pérez" required>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-12 col-md-4">
                                 <label class="form-label fw-bold">Teléfono</label>
                                 <input type="text" class="form-control" id="telefono" placeholder="Ej. 123456789" required>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-12 col-md-4">
                                 <label class="form-label fw-bold">Dirección IP</label>
                                 <input type="text" class="form-control" id="ip_estatica" placeholder="Ej. 192.168.4.50" required>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-12 col-md-6">
                                 <label class="form-label fw-bold">Plan de Internet</label>
                                 <select class="form-select" id="plan_id" required></select>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-12 col-md-6">
                                 <label class="form-label fw-bold">Fecha de Corte</label>
                                 <input type="date" class="form-control" id="fecha_corte" required>
                             </div>
                             <div class="col-12 text-end">
-                                <button type="submit" class="btn btn-caszary-red px-4">Guardar y Sincronizar MikroTik</button>
+                                <button type="submit" class="btn btn-caszary-red w-100 w-md-auto px-4">Guardar y Sincronizar MikroTik</button>
                             </div>
                         </form>
                     </div>
@@ -207,14 +242,14 @@
                 <div class="card-header bg-caszary-black d-flex flex-wrap justify-content-between align-items-center gap-2">
                     <div class="d-flex align-items-center gap-2" style="cursor: pointer;"
                          data-bs-toggle="collapse" data-bs-target="#collapseListaClientes">
-                        <span class="fw-bold">📑 Lista de Clientes Registrados</span>
-                        <span class="badge bg-caszary-red">Desplegar / Ocultar ▼</span>
+                        <span class="fw-bold">📑 Lista de Clientes</span>
+                        <span class="badge bg-caszary-red">Ocultar / Ver ▼</span>
                     </div>
 
-                    <div class="d-flex align-items-center gap-2">
+                    <div class="d-flex align-items-center gap-2 search-box-mobile" style="width: 340px;">
                         <input type="text" id="buscadorClientes" class="form-control form-control-sm"
-                               style="width: 260px;" placeholder="🔍 Buscar por nombre, IP o teléfono...">
-                        <span class="badge bg-light text-dark fw-bold" id="contadorClientes">0 Clientes</span>
+                               placeholder="🔍 Buscar nombre, IP o teléfono...">
+                        <span class="badge bg-light text-dark fw-bold text-nowrap" id="contadorClientes">0 Clientes</span>
                     </div>
                 </div>
                 <div id="collapseListaClientes" class="collapse show">
@@ -258,8 +293,8 @@
         <!-- SECCIÓN 3: ADMINISTRADORES -->
         <!-- ========================================================= -->
         <div id="seccion-administradores" class="seccion-panel d-none">
-            <div class="row g-4">
-                <div class="col-md-5">
+            <div class="row g-3 g-md-4">
+                <div class="col-12 col-md-5">
                     <div class="card shadow-sm">
                         <div class="card-header bg-caszary-black fw-bold">➕ Crear Nuevo Administrador</div>
                         <div class="card-body">
@@ -277,7 +312,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-md-7">
+                <div class="col-12 col-md-7">
                     <div class="card shadow-sm">
                         <div class="card-header bg-caszary-black fw-bold">👥 Administradores Registrados</div>
                         <div class="card-body">
@@ -294,23 +329,23 @@
         <div id="seccion-paquetes" class="seccion-panel d-none">
             
             <!-- Tarjeta para Agregar Nuevo Plan -->
-            <div class="card shadow-sm mb-4">
+            <div class="card shadow-sm mb-3 mb-md-4">
                 <div class="card-header bg-caszary-red fw-bold">➕ Agregar Nuevo Paquete / Plan</div>
                 <div class="card-body">
                     <form id="formNuevoPlan" class="row g-3 align-items-end">
-                        <div class="col-md-5">
+                        <div class="col-12 col-md-5">
                             <label class="form-label fw-bold">Nombre del Plan</label>
                             <input type="text" class="form-control" id="nuevo_plan_nombre" placeholder="Ej. Plan 30 Megas (Simétrico)" required>
                         </div>
-                        <div class="col-md-2">
+                        <div class="col-6 col-md-2">
                             <label class="form-label fw-bold">Subida (Megas)</label>
                             <input type="text" class="form-control" id="nuevo_plan_subida" placeholder="Ej. 30" required>
                         </div>
-                        <div class="col-md-2">
+                        <div class="col-6 col-md-2">
                             <label class="form-label fw-bold">Bajada (Megas)</label>
                             <input type="text" class="form-control" id="nuevo_plan_bajada" placeholder="Ej. 30" required>
                         </div>
-                        <div class="col-md-3">
+                        <div class="col-12 col-md-3">
                             <button type="submit" class="btn btn-caszary-black w-100">Agregar Plan</button>
                         </div>
                     </form>
@@ -326,8 +361,8 @@
                             <tr>
                                 <th>ID</th>
                                 <th>Nombre del Plan</th>
-                                <th>Subida (Upload)</th>
-                                <th>Bajada (Download)</th>
+                                <th>Subida</th>
+                                <th>Bajada</th>
                                 <th>Acción</th>
                             </tr>
                         </thead>
@@ -343,7 +378,7 @@
     <!-- MODAL PARA EDITAR CLIENTE -->
     <!-- ========================================================= -->
     <div class="modal fade" id="modalEditarCliente" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog">
+        <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header bg-caszary-black">
                     <h5 class="modal-title fw-bold">✏️ Editar Servicio del Cliente</h5>
@@ -406,13 +441,17 @@
             }
         });
 
-        // Navegación entre secciones del menú
+        // Navegación entre secciones del menú (se cierra automático en móvil)
         function mostrarSeccion(idSeccion, elemento) {
             document.querySelectorAll('.seccion-panel').forEach(sec => sec.classList.add('d-none'));
             document.getElementById(idSeccion).classList.remove('d-none');
 
             document.querySelectorAll('#sidebar .nav-link').forEach(link => link.classList.remove('active'));
             elemento.classList.add('active');
+
+            if (window.innerWidth <= 768) {
+                document.getElementById('sidebar').classList.remove('show-mobile');
+            }
         }
 
         // Cargar Datos Iniciales
@@ -469,10 +508,12 @@
                         <td><span class="badge bg-secondary">${nombrePlan}</span></td>
                         <td>${c.fecha_corte}</td>
                         <td>${badgeEstado}</td>
-                        <td class="d-flex flex-wrap gap-1">
-                            <button class="btn btn-warning btn-sm fw-bold" onclick="abrirModalEditar(${c.id})">Editar</button>
-                            ${btnEstado}
-                            <button class="btn btn-danger btn-sm fw-bold" onclick="eliminarCliente(${c.id}, '${c.nombre}')">Eliminar</button>
+                        <td>
+                            <div class="d-flex gap-1">
+                                <button class="btn btn-warning btn-sm fw-bold" onclick="abrirModalEditar(${c.id})">Editar</button>
+                                ${btnEstado}
+                                <button class="btn btn-danger btn-sm fw-bold" onclick="eliminarCliente(${c.id}, '${c.nombre}')">Eliminar</button>
+                            </div>
                         </td>
                     </tr>
                 `;
@@ -557,9 +598,9 @@
                 if (c.fecha_corte <= hoy) {
                     conteo++;
                     lista.innerHTML += `
-                        <li class="list-group-item d-flex justify-content-between align-items-center list-group-item-danger">
+                        <li class="list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2 list-group-item-danger">
                             <div>
-                                <strong>⚠️ ${c.nombre}</strong> (IP: ${c.ip_estatica}) — Fecha de corte: <strong>${c.fecha_corte}</strong>
+                                <strong>⚠️ ${c.nombre}</strong> (IP: ${c.ip_estatica}) — Corte: <strong>${c.fecha_corte}</strong>
                             </div>
                             ${c.activo ? `<button class="btn btn-sm btn-caszary-red" onclick="cambiarEstado(${c.id})">Cortar Servicio</button>` : '<span class="badge bg-dark">Ya Cortado</span>'}
                         </li>
@@ -605,10 +646,10 @@
                 tbody.innerHTML += `
                     <tr>
                         <td>${p.id}</td>
-                        <td><input type="text" class="form-control form-control-sm" id="plan_nom_${p.id}" value="${p.nombre}"></td>
-                        <td><input type="text" class="form-control form-control-sm" id="plan_sub_${p.id}" value="${sub}"></td>
-                        <td><input type="text" class="form-control form-control-sm" id="plan_baj_${p.id}" value="${baj}"></td>
-                        <td><button class="btn btn-caszary-red btn-sm" onclick="guardarPlan(${p.id})">Guardar Cambios</button></td>
+                        <td><input type="text" class="form-control form-control-sm" style="min-width: 170px;" id="plan_nom_${p.id}" value="${p.nombre}"></td>
+                        <td><input type="text" class="form-control form-control-sm" style="min-width: 70px;" id="plan_sub_${p.id}" value="${sub}"></td>
+                        <td><input type="text" class="form-control form-control-sm" style="min-width: 70px;" id="plan_baj_${p.id}" value="${baj}"></td>
+                        <td><button class="btn btn-caszary-red btn-sm text-nowrap" onclick="guardarPlan(${p.id})">Guardar</button></td>
                     </tr>
                 `;
             });
