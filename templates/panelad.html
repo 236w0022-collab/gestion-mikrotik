@@ -1,25 +1,38 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Control WISP - Red comunitaria josefinas</title>
+    <title>Panel de Control WISP - CASZARY TELECOMUNICACIONES</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
             background-color: #f4f6f9;
             overflow-x: hidden;
+            position: relative;
         }
+
+        /* Marca de agua con el logo de CASZARY TELECOMUNICACIONES */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 56px;
+            left: 0;
+            width: 100%;
+            height: calc(100vh - 56px);
+            background-image: url('/static/logo_caszary.jpg');
+            background-repeat: no-repeat;
+            background-position: center center;
+            background-size: 50%;
+            opacity: 0.08;
+            pointer-events: none;
+            z-index: 0;
+        }
+
         /* Navbar Superior */
-        
-        .navbar-custom {
-            background-color: #212529;
-            color: white;
-            z-index: 1030;
-        }
+        .navbar-custom { background-color: #212529; color: white; z-index: 1030; }
+
         /* Sidebar Izquierdo Desplegable */
-        
         #sidebar {
             width: 260px;
             min-height: calc(100vh - 56px);
@@ -31,11 +44,7 @@
             left: 0;
             z-index: 1020;
         }
-        
-        #sidebar.collapsed {
-            margin-left: -260px;
-        }
-        
+        #sidebar.collapsed { margin-left: -260px; }
         #sidebar .nav-link {
             color: #adb5bd;
             padding: 12px 20px;
@@ -45,48 +54,42 @@
             justify-content: space-between;
             align-items: center;
         }
-        
-        #sidebar .nav-link:hover,
-        #sidebar .nav-link.active {
-            background-color: #0d6efd;
+        #sidebar .nav-link:hover, #sidebar .nav-link.active {
+            background-color: #dc3545;
             color: #fff;
         }
+
         /* Contenido Principal */
-        
         #main-content {
             margin-left: 260px;
             padding: 25px;
             transition: margin-left 0.3s ease;
+            position: relative;
+            z-index: 1;
         }
-        
-        #main-content.expanded {
-            margin-left: 0;
-        }
-        
+        #main-content.expanded { margin-left: 0; }
+
+        .card { background-color: rgba(255, 255, 255, 0.94); }
+
         @media (max-width: 768px) {
-            #sidebar {
-                margin-left: -260px;
-            }
-            #sidebar.show-mobile {
-                margin-left: 0;
-            }
-            #main-content {
-                margin-left: 0;
-            }
+            #sidebar { margin-left: -260px; }
+            #sidebar.show-mobile { margin-left: 0; }
+            #main-content { margin-left: 0; }
+            body::before { background-size: 85%; }
         }
     </style>
 </head>
-
 <body>
 
     <!-- Barra Superior -->
     <nav class="navbar navbar-custom px-3 sticky-top">
         <div class="d-flex align-items-center">
             <button class="btn btn-outline-light me-3" id="btnToggleMenu">☰</button>
-            <span class="navbar-brand mb-0 h5 text-white">📡 Sistema de Gestión WISP de Red comunitaria josefinas</span>
+            <img src="/static/logo_caszary.jpg" alt="Logo" height="34" class="me-2 rounded bg-white p-1">
+            <span class="navbar-brand mb-0 h5 text-white fw-bold">CASZARY TELECOMUNICACIONES</span>
         </div>
         <div class="d-flex align-items-center gap-3">
-            <span>👤 <strong>admin</strong></span>
+            <span>👤 <strong>{{ usuario }}</strong></span>
             <a href="/logout" class="btn btn-outline-light btn-sm">Cerrar Sesión</a>
         </div>
     </nav>
@@ -115,13 +118,14 @@
     <div id="main-content">
 
         <!-- ========================================================= -->
-        <!-- SECCIÓN 1: GESTIÓN DE CLIENTES (REGISTRO DESPLEGABLE + BUSCADOR) -->
+        <!-- SECCIÓN 1: GESTIÓN DE CLIENTES -->
         <!-- ========================================================= -->
         <div id="seccion-clientes" class="seccion-panel">
 
             <!-- Tarjeta Desplegable: Registrar Nuevo Cliente -->
             <div class="card shadow-sm mb-4">
-                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center" style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#collapseRegistro">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center"
+                     style="cursor: pointer;" data-bs-toggle="collapse" data-bs-target="#collapseRegistro">
                     <span class="fw-bold">➕ Registrar Nuevo Cliente</span>
                     <span class="badge bg-light text-primary">Clic para desplegar / ocultar ▼</span>
                 </div>
@@ -160,10 +164,9 @@
             <div class="card shadow-sm">
                 <div class="card-header bg-dark text-white d-flex flex-wrap justify-content-between align-items-center gap-2">
                     <span class="fw-bold">📑 Lista de Clientes Registrados</span>
-
-                    <!-- Barra Buscadora -->
                     <div class="d-flex align-items-center gap-2">
-                        <input type="text" id="buscadorClientes" class="form-control form-control-sm" style="width: 260px;" placeholder="🔍 Buscar por nombre, IP o teléfono...">
+                        <input type="text" id="buscadorClientes" class="form-control form-control-sm"
+                               style="width: 260px;" placeholder="🔍 Buscar por nombre, IP o teléfono...">
                         <span class="badge bg-secondary" id="contadorClientes">0 Clientes</span>
                     </div>
                 </div>
@@ -188,7 +191,7 @@
         </div>
 
         <!-- ========================================================= -->
-        <!-- SECCIÓN 2: NOTIFICACIONES (VENCIMIENTOS Y CORTES) -->
+        <!-- SECCIÓN 2: NOTIFICACIONES -->
         <!-- ========================================================= -->
         <div id="seccion-notificaciones" class="seccion-panel d-none">
             <div class="card shadow-sm">
@@ -203,7 +206,7 @@
         </div>
 
         <!-- ========================================================= -->
-        <!-- SECCIÓN 3: CREAR NUEVOS ADMINISTRADORES -->
+        <!-- SECCIÓN 3: ADMINISTRADORES -->
         <!-- ========================================================= -->
         <div id="seccion-administradores" class="seccion-panel d-none">
             <div class="row g-4">
@@ -229,12 +232,7 @@
                     <div class="card shadow-sm">
                         <div class="card-header bg-secondary text-white fw-bold">👥 Administradores Registrados</div>
                         <div class="card-body">
-                            <ul class="list-group" id="listaAdmins">
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <span><strong>admin</strong> (Principal)</span>
-                                    <span class="badge bg-success">Activo</span>
-                                </li>
-                            </ul>
+                            <ul class="list-group" id="listaAdmins"></ul>
                         </div>
                     </div>
                 </div>
@@ -242,7 +240,7 @@
         </div>
 
         <!-- ========================================================= -->
-        <!-- SECCIÓN 4: MODIFICAR PAQUETES / PLANES -->
+        <!-- SECCIÓN 4: MODIFICAR PAQUETES -->
         <!-- ========================================================= -->
         <div id="seccion-paquetes" class="seccion-panel d-none">
             <div class="card shadow-sm">
@@ -266,12 +264,62 @@
 
     </div>
 
+    <!-- ========================================================= -->
+    <!-- MODAL PARA EDITAR CLIENTE (CAMBIAR MEGAS / PLAN / IP / FECHA) -->
+    <!-- ========================================================= -->
+    <div class="modal fade" id="modalEditarCliente" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title fw-bold">✏️ Editar Servicio del Cliente</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <form id="formEditarCliente">
+                    <div class="modal-body">
+                        <input type="hidden" id="edit_id">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Nombre Completo</label>
+                            <input type="text" class="form-control" id="edit_nombre" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Teléfono</label>
+                            <input type="text" class="form-control" id="edit_telefono" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Dirección IP Estática</label>
+                            <input type="text" class="form-control" id="edit_ip" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Plan Contratado (Megas)</label>
+                            <select class="form-select" id="edit_plan_id" required></select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Fecha de Corte</label>
+                            <input type="date" class="form-control" id="edit_fecha_corte" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         let clientesGlobal = [];
         let planesGlobal = [];
+        let modalEditarInstance;
 
-        // 1. Toggle Menú Lateral Izquierdo
+        document.addEventListener('DOMContentLoaded', () => {
+            modalEditarInstance = new bootstrap.Modal(document.getElementById('modalEditarCliente'));
+            cargarDatos();
+            cargarAdmins();
+        });
+
+        // Toggle Menú Lateral Izquierdo
         document.getElementById('btnToggleMenu').addEventListener('click', () => {
             const sidebar = document.getElementById('sidebar');
             const content = document.getElementById('main-content');
@@ -283,7 +331,7 @@
             }
         });
 
-        // 2. Navegación entre secciones del menú
+        // Navegación entre secciones del menú
         function mostrarSeccion(idSeccion, elemento) {
             document.querySelectorAll('.seccion-panel').forEach(sec => sec.classList.add('d-none'));
             document.getElementById(idSeccion).classList.remove('d-none');
@@ -292,7 +340,7 @@
             elemento.classList.add('active');
         }
 
-        // 3. Cargar Datos Iniciales
+        // Cargar Datos Iniciales
         async function cargarDatos() {
             const [resPlanes, resClientes] = await Promise.all([
                 fetch('/api/planes'),
@@ -308,10 +356,17 @@
         }
 
         function renderSelectPlanes() {
-            const select = document.getElementById('plan_id');
-            select.innerHTML = '<option value="">Selecciona un plan...</option>';
+            const selectNuevo = document.getElementById('plan_id');
+            const selectEditar = document.getElementById('edit_plan_id');
+            selectNuevo.innerHTML = '<option value="">Selecciona un plan...</option>';
+            selectEditar.innerHTML = '';
+
             planesGlobal.forEach(p => {
-                select.innerHTML += `<option value="${p.id}">${p.nombre} (${p.velocidad_subida || p.subida} / ${p.velocidad_bajada || p.bajada})</option>`;
+                const sub = p.velocidad_subida || p.subida || '';
+                const baj = p.velocidad_bajada || p.bajada || '';
+                const optionHTML = `<option value="${p.id}">${p.nombre} (${sub} / ${baj})</option>`;
+                selectNuevo.innerHTML += optionHTML;
+                selectEditar.innerHTML += optionHTML;
             });
         }
 
@@ -323,12 +378,12 @@
             lista.forEach(c => {
                 const plan = planesGlobal.find(p => p.id === c.plan_id);
                 const nombrePlan = plan ? plan.nombre : 'Sin plan';
-                const badgeEstado = c.activo ?
-                    '<span class="badge bg-success">Activo</span>' :
-                    '<span class="badge bg-danger">Desactivado</span>';
-                const btnAccion = c.activo ?
-                    `<button class="btn btn-outline-danger btn-sm" onclick="cambiarEstado(${c.id}, false)">Desactivar</button>` :
-                    `<button class="btn btn-outline-success btn-sm" onclick="cambiarEstado(${c.id}, true)">Activar</button>`;
+                const badgeEstado = c.activo
+                    ? '<span class="badge bg-success">Activo</span>'
+                    : '<span class="badge bg-danger">Desactivado</span>';
+                const btnEstado = c.activo
+                    ? `<button class="btn btn-outline-danger btn-sm" onclick="cambiarEstado(${c.id})">Desactivar</button>`
+                    : `<button class="btn btn-outline-success btn-sm" onclick="cambiarEstado(${c.id})">Activar</button>`;
 
                 tbody.innerHTML += `
                     <tr>
@@ -339,13 +394,57 @@
                         <td><span class="badge bg-info text-dark">${nombrePlan}</span></td>
                         <td>${c.fecha_corte}</td>
                         <td>${badgeEstado}</td>
-                        <td>${btnAccion}</td>
+                        <td class="d-flex gap-1">
+                            <button class="btn btn-warning btn-sm fw-bold" onclick="abrirModalEditar(${c.id})">Editar</button>
+                            ${btnEstado}
+                        </td>
                     </tr>
                 `;
             });
         }
 
-        // 4. Barra Buscadora en Tiempo Real
+        // Abrir Modal de Edición con datos del cliente
+        function abrirModalEditar(id) {
+            const cliente = clientesGlobal.find(c => c.id === id);
+            if (!cliente) return;
+
+            document.getElementById('edit_id').value = cliente.id;
+            document.getElementById('edit_nombre').value = cliente.nombre;
+            document.getElementById('edit_telefono').value = cliente.telefono;
+            document.getElementById('edit_ip').value = cliente.ip_estatica;
+            document.getElementById('edit_plan_id').value = cliente.plan_id;
+            document.getElementById('edit_fecha_corte').value = cliente.fecha_corte;
+
+            modalEditarInstance.show();
+        }
+
+        // Guardar Cambios del Cliente Editado
+        document.getElementById('formEditarCliente').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('edit_id').value;
+            const payload = {
+                nombre: document.getElementById('edit_nombre').value,
+                telefono: document.getElementById('edit_telefono').value,
+                ip_estatica: document.getElementById('edit_ip').value,
+                plan_id: parseInt(document.getElementById('edit_plan_id').value),
+                fecha_corte: document.getElementById('edit_fecha_corte').value
+            };
+
+            const res = await fetch(`/api/clientes/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                modalEditarInstance.hide();
+                cargarDatos();
+            } else {
+                alert('❌ Error al actualizar los datos del cliente.');
+            }
+        });
+
+        // Barra Buscadora en Tiempo Real
         document.getElementById('buscadorClientes').addEventListener('input', (e) => {
             const texto = e.target.value.toLowerCase();
             const filtrados = clientesGlobal.filter(c =>
@@ -356,7 +455,7 @@
             renderTablaClientes(filtrados);
         });
 
-        // 5. Generar Notificaciones por Fecha de Corte
+        // Generar Notificaciones por Fecha de Corte
         function generarNotificaciones() {
             const hoy = new Date().toISOString().split('T')[0];
             const lista = document.getElementById('listaNotificaciones');
@@ -371,7 +470,7 @@
                             <div>
                                 <strong>⚠️ ${c.nombre}</strong> (IP: ${c.ip_estatica}) — Fecha de corte: <strong>${c.fecha_corte}</strong>
                             </div>
-                            <button class="btn btn-sm btn-danger" onclick="cambiarEstado(${c.id}, false)">Cortar Servicio</button>
+                            ${c.activo ? `<button class="btn btn-sm btn-danger" onclick="cambiarEstado(${c.id})">Cortar Servicio</button>` : '<span class="badge bg-secondary">Ya Cortado</span>'}
                         </li>
                     `;
                 }
@@ -383,7 +482,7 @@
             }
         }
 
-        // 6. Renderizar Tabla para Modificar Paquetes
+        // Renderizar Tabla para Modificar Paquetes
         function renderTablaPlanes() {
             const tbody = document.getElementById('tablaPlanes');
             tbody.innerHTML = '';
@@ -410,9 +509,7 @@
             };
             const res = await fetch(`/api/planes/${id}`, {
                 method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
             if (res.ok) {
@@ -421,8 +518,8 @@
             }
         }
 
-        // 7. Registrar Nuevo Cliente
-        document.getElementById('formNuevoCliente').addEventListener('submit', async(e) => {
+        // Registrar Nuevo Cliente
+        document.getElementById('formNuevoCliente').addEventListener('submit', async (e) => {
             e.preventDefault();
             const payload = {
                 nombre: document.getElementById('nombre').value,
@@ -434,9 +531,7 @@
             };
             const res = await fetch('/api/clientes', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
             if (res.ok) {
@@ -445,28 +540,39 @@
             }
         });
 
-        // 8. Activar / Desactivar Cliente
-        async function cambiarEstado(id, nuevoEstado) {
+        // Activar / Desactivar Cliente
+        async function cambiarEstado(id) {
             await fetch(`/api/clientes/${id}/estado`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    activo: nuevoEstado
-                })
+                method: 'PATCH'
             });
             cargarDatos();
         }
 
-        // 9. Crear Nuevo Administrador
-        document.getElementById('formNuevoAdmin').addEventListener('submit', async(e) => {
+        // Cargar y Crear Administradores
+        async function cargarAdmins() {
+            try {
+                const res = await fetch('/api/administradores');
+                if (res.ok) {
+                    const admins = await res.json();
+                    const lista = document.getElementById('listaAdmins');
+                    lista.innerHTML = '';
+                    admins.forEach(a => {
+                        lista.innerHTML += `
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>👤 <strong>${a.username}</strong></span>
+                                <span class="badge bg-success">Activo</span>
+                            </li>
+                        `;
+                    });
+                }
+            } catch (e) {}
+        }
+
+        document.getElementById('formNuevoAdmin').addEventListener('submit', async (e) => {
             e.preventDefault();
             const res = await fetch('/api/administradores', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     username: document.getElementById('admin_user').value,
                     password: document.getElementById('admin_pass').value
@@ -475,13 +581,11 @@
             if (res.ok) {
                 alert('✅ Nuevo administrador creado.');
                 e.target.reset();
+                cargarAdmins();
             } else {
-                alert('⚠️ Verifica que la ruta /api/administradores esté agregada en main.py');
+                alert('❌ Error al crear administrador (el usuario ya existe).');
             }
         });
-
-        cargarDatos();
     </script>
 </body>
-
 </html>
