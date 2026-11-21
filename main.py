@@ -2,6 +2,7 @@ import os
 from fastapi import FastAPI, Depends, Form, Request, status, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from typing import List
 from pydantic import BaseModel
@@ -13,9 +14,11 @@ from database import engine, get_db
 # Crear tablas en PostgreSQL automáticamente si no existen
 models.Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="Panel WISP - Red Comunitaria Josefinas")
+app = FastAPI(title="Panel WISP - CASZARY TELECOMUNICACIONES")
 
-# Configurar directorio de plantillas HTML
+# Configurar carpeta de archivos estáticos (para el logotipo) y plantillas HTML
+os.makedirs("static", exist_ok=True)
+app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 
