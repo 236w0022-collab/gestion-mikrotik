@@ -1,28 +1,33 @@
-from sqlalchemy import Column, Integer, String, Date, Boolean
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
+from sqlalchemy.orm import relationship
 from database import Base
 
 class User(Base):
     __tablename__ = "users"
-
     id = Column(Integer, primary_key=True, index=True)
-    username = Column(String(100), unique=True, nullable=False)
-    password_hash = Column(String(255), nullable=False)
+    username = Column(String, unique=True, index=True)
+    password_hash = Column(String)
+
+class Zona(Base):
+    __tablename__ = "zonas"
+    id = Column(Integer, primary_key=True, index=True)
+    nombre = Column(String, unique=True, index=True)
+    descripcion = Column(String, nullable=True)
 
 class Plan(Base):
     __tablename__ = "planes"
-
     id = Column(Integer, primary_key=True, index=True)
-    nombre = Column(String(50), nullable=False)
-    velocidad_bajada = Column(Integer, nullable=False)
-    velocidad_subida = Column(Integer, nullable=False)
+    nombre = Column(String)
+    velocidad_subida = Column(String)
+    velocidad_bajada = Column(String)
 
 class Cliente(Base):
     __tablename__ = "clientes"
-
     id = Column(Integer, primary_key=True, index=True)
-    nombre = Column(String(100), nullable=False)
-    telefono = Column(String(20), nullable=True)
-    ip_estatica = Column(String(45), nullable=False)
-    fecha_corte = Column(Date, nullable=False)
-    plan_id = Column(Integer, nullable=False)
-    activo = Column(Boolean, default=True, nullable=False)
+    nombre = Column(String)
+    telefono = Column(String)
+    ip_estatica = Column(String)
+    fecha_corte = Column(String)
+    activo = Column(Boolean, default=True)
+    plan_id = Column(Integer, ForeignKey("planes.id"))
+    zona_id = Column(Integer, ForeignKey("zonas.id"), nullable=True)

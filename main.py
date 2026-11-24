@@ -1,22 +1,30 @@
 import os
 from fastapi import FastAPI, Depends, Form, Request, status, HTTPException
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, PlainTextResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
-from typing import List
+from sqlalchemy import text
+from typing import List, Optional
 from pydantic import BaseModel
 
 import models
 import schemas
 from database import engine, get_db
 
-# Crear tablas en PostgreSQL automáticamente si no existen
+# Crear tablas nuevas si no existen
 models.Base.metadata.create_all(bind=engine)
+
+# Agregar columna zona_id a clientes existentes en PostgreSQL sin perder datos
+with engine.connect() as conn:
+    try:
+        conn.execute(text("ALTER TABLE clientes ADD COLUMN IF NOT EXISTS zona_id INTEGER REFERENCES zonas(id);"))
+        conn.commit()
+    except Exception:
+        pass
 
 app = FastAPI(title="Panel WISP - CASZARY TELECOMUNICACIONES")
 
-# Configurar carpeta de archivos estáticos (para el logotipo) y plantillas HTML
 os.makedirs("static", exist_ok=True)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
@@ -35,6 +43,11 @@ class AdminCreate(BaseModel):
     password: str
 
 
+class ZonaCreate(BaseModel):
+    nombre: str
+    descripcion: Optional[str] = ""
+
+
 # --- RUTAS DE NAVEGACIÓN Y ACCESO ---
 
 @app.get("/", response_class=HTMLResponse)
@@ -46,12 +59,7 @@ def root(request: Request):
 def show_login(request: Request):
     if request.cookies.get("session_user"):
         return RedirectResponse(url="/dashboard", status_code=status.HTTP_302_FOUND)
-    
-    return templates.TemplateResponse(
-        request,
-        "login.html",
-        {"error": None}
-    )
+    return templates.TemplateResponse(request, "login.html", {"error": None})
 
 
 @app.post("/login", response_class=HTMLResponse)
@@ -62,7 +70,6 @@ def process_login(
     db: Session = Depends(get_db)
 ):
     user = db.query(models.User).filter(models.User.username == username).first()
-
     if not user or user.password_hash != password:
         return templates.TemplateResponse(
             request,
@@ -70,7 +77,6 @@ def process_login(
             {"error": "Usuario o contraseña incorrectos"},
             status_code=status.HTTP_401_UNAUTHORIZED
         )
-
     response = RedirectResponse(url="/dashboard", status_code=status.HTTP_302_FOUND)
     response.set_cookie(key="session_user", value=user.username, httponly=True)
     return response
@@ -81,12 +87,7 @@ def show_dashboard(request: Request):
     session_user = request.cookies.get("session_user")
     if not session_user:
         return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
-    
-    return templates.TemplateResponse(
-        request,
-        "panelad.html",
-        {"usuario": session_user}
-    )
+    return templates.TemplateResponse(request, "panelad.html", {"usuario": session_user})
 
 
 @app.get("/logout")
@@ -94,6 +95,78 @@ def logout():
     response = RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
     response.delete_cookie(key="session_user")
     return response
+
+
+# --- API REST DE ZONAS / MIKROTIKS ---
+
+@app.get("/api/zonas")
+def obtener_zonas(db: Session = Depends(get_db)):
+    zonas = db.query(models.Zona).order_by(models.Zona.id).all()
+    return [{"id": z.id, "nombre": z.nombre, "descripcion": z.descripcion or ""} for z in zonas]
+
+
+@app.post("/api/zonas")
+def crear_zona(datos: ZonaCreate, db: Session = Depends(get_db)):
+    existente = db.query(models.Zona).filter(models.Zona.nombre == datos.nombre).first()
+    if existente:
+        raise HTTPException(status_code=400, detail="Ya existe una zona con ese nombre")
+    nueva = models.Zona(nombre=datos.nombre, descripcion=datos.descripcion)
+    db.add(nueva)
+    db.commit()
+    db.refresh(nueva)
+    return {"id": nueva.id, "nombre": nueva.nombre, "descripcion": nueva.descripcion}
+
+
+@app.delete("/api/zonas/{zona_id}")
+def eliminar_zona(zona_id: int, db: Session = Depends(get_db)):
+    zona = db.query(models.Zona).filter(models.Zona.id == zona_id).first()
+    if not zona:
+        raise HTTPException(status_code=404, detail="Zona no encontrada")
+    # Desvincular clientes de esa zona antes de borrarla
+    db.query(models.Cliente).filter(models.Cliente.zona_id == zona_id).update({"zona_id": None})
+    db.delete(zona)
+    db.commit()
+    return {"mensaje": "Zona eliminada"}
+
+
+# --- ENDPOINT DE SINCRONIZACIÓN DIRECTA PARA MIKROTIK (/tool fetch) ---
+
+@app.get("/api/zonas/{zona_id}/script.rsc", response_class=PlainTextResponse)
+def generar_script_mikrotik(zona_id: int, db: Session = Depends(get_db)):
+    """Genera comandos nativos de RouterOS solo para los clientes de la zona indicada."""
+    zona = db.query(models.Zona).filter(models.Zona.id == zona_id).first()
+    if not zona:
+        return "# Error: Zona no encontrada\n"
+
+    clientes = db.query(models.Cliente).filter(models.Cliente.zona_id == zona_id).all()
+    planes = {p.id: p for p in db.query(models.Plan).all()}
+
+    lineas = [
+        f"# Sincronizacion automatica CASZARY - Zona: {zona.nombre}",
+        '/queue simple remove [find comment="WISP_AUTO"]',
+        '/ip firewall address-list remove [find list="morosos" comment="WISP_AUTO"]',
+    ]
+
+    for c in clientes:
+        ip = c.ip_estatica.strip()
+        nombre_limpio = c.nombre.replace('"', '').replace(' ', '_')
+        if c.activo:
+            plan = planes.get(c.plan_id)
+            subida = str(plan.velocidad_subida).strip() if plan else "5"
+            bajada = str(plan.velocidad_bajada).strip() if plan else "10"
+            if subida.isdigit():
+                subida += "M"
+            if bajada.isdigit():
+                bajada += "M"
+            lineas.append(
+                f'/queue simple add name="Cliente_{nombre_limpio}_{c.id}" target="{ip}/32" max-limit="{subida}/{bajada}" comment="WISP_AUTO"'
+            )
+        else:
+            lineas.append(
+                f'/ip firewall address-list add list="morosos" address="{ip}" comment="WISP_AUTO"'
+            )
+
+    return "\n".join(lineas) + "\n"
 
 
 # --- API REST DE PLANES ---
@@ -143,6 +216,7 @@ def registrar_cliente(cliente: schemas.ClienteCreate, db: Session = Depends(get_
         ip_estatica=cliente.ip_estatica,
         fecha_corte=cliente.fecha_corte,
         plan_id=cliente.plan_id,
+        zona_id=cliente.zona_id,
         activo=True
     )
     db.add(nuevo_cliente)

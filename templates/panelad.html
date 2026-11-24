@@ -19,7 +19,6 @@
             position: relative;
         }
 
-        /* Marca de agua más nítida con el logo de CASZARY TELECOMUNICACIONES */
         body::before {
             content: "";
             position: fixed;
@@ -36,7 +35,6 @@
             z-index: 0;
         }
 
-        /* Navbar Superior Institucional */
         .navbar-custom {
             background-color: var(--caszary-black);
             border-bottom: 3px solid var(--caszary-red);
@@ -44,7 +42,6 @@
             z-index: 1030;
         }
 
-        /* Clases Institucionales Rojo / Negro */
         .bg-caszary-red { background-color: var(--caszary-red) !important; color: #fff !important; }
         .bg-caszary-black { background-color: var(--caszary-black) !important; color: #fff !important; }
         .btn-caszary-red {
@@ -69,7 +66,6 @@
             color: #fff;
         }
 
-        /* Sidebar Izquierdo Desplegable */
         #sidebar {
             width: 260px;
             min-height: calc(100vh - 59px);
@@ -99,7 +95,6 @@
             font-weight: 600;
         }
 
-        /* Contenido Principal */
         #main-content {
             margin-left: 260px;
             padding: 25px;
@@ -109,16 +104,12 @@
         }
         #main-content.expanded { margin-left: 0; }
 
-        /* Tarjetas ligeramente translúcidas para dejar lucir el logo de fondo */
         .card {
             background-color: rgba(255, 255, 255, 0.88);
             border: 1px solid #dcdcdc;
         }
-        .table {
-            --bs-table-bg: transparent;
-        }
+        .table { --bs-table-bg: transparent; }
 
-        /* Adaptación Responsive para Celulares y Tablets */
         @media (max-width: 768px) {
             #sidebar {
                 margin-left: -260px;
@@ -126,14 +117,8 @@
                 min-height: calc(100vh - 54px);
             }
             #sidebar.show-mobile { margin-left: 0; }
-            #main-content {
-                margin-left: 0;
-                padding: 12px;
-            }
-            body::before {
-                background-size: 90%;
-                opacity: 0.20;
-            }
+            #main-content { margin-left: 0; padding: 12px; }
+            body::before { background-size: 90%; opacity: 0.20; }
             .brand-text {
                 font-size: 0.85rem !important;
                 max-width: 145px;
@@ -141,13 +126,8 @@
                 overflow: hidden;
                 text-overflow: ellipsis;
             }
-            .user-label {
-                display: none;
-            }
-            .search-box-mobile {
-                width: 100% !important;
-                margin-top: 6px;
-            }
+            .user-label { display: none; }
+            .search-box-mobile { width: 100% !important; margin-top: 6px; }
             .table td, .table th {
                 white-space: nowrap;
                 font-size: 0.88rem;
@@ -178,6 +158,9 @@
             <a class="nav-link active" onclick="mostrarSeccion('seccion-clientes', this)">
                 <span>📋 Gestión de Clientes</span>
             </a>
+            <a class="nav-link" onclick="mostrarSeccion('seccion-zonas', this)">
+                <span>📍 Zonas / MikroTiks</span>
+            </a>
             <a class="nav-link" onclick="mostrarSeccion('seccion-notificaciones', this)">
                 <span>🔔 Notificaciones</span>
                 <span class="badge bg-light text-danger fw-bold rounded-pill" id="badge-notif">0</span>
@@ -195,7 +178,7 @@
     <div id="main-content">
 
         <!-- ========================================================= -->
-        <!-- SECCIÓN 1: GESTIÓN DE CLIENTES -->
+        <!-- SECCIÓN 1: GESTIÓN DE CLIENTES POR ZONA -->
         <!-- ========================================================= -->
         <div id="seccion-clientes" class="seccion-panel">
 
@@ -210,6 +193,10 @@
                     <div class="card-body">
                         <form id="formNuevoCliente" class="row g-3">
                             <div class="col-12 col-md-4">
+                                <label class="form-label fw-bold">Zona / Router MikroTik</label>
+                                <select class="form-select" id="zona_id" required></select>
+                            </div>
+                            <div class="col-12 col-md-4">
                                 <label class="form-label fw-bold">Nombre Completo</label>
                                 <input type="text" class="form-control" id="nombre" placeholder="Ej. Juan Pérez" required>
                             </div>
@@ -221,11 +208,11 @@
                                 <label class="form-label fw-bold">Dirección IP</label>
                                 <input type="text" class="form-control" id="ip_estatica" placeholder="Ej. 192.168.4.50" required>
                             </div>
-                            <div class="col-12 col-md-6">
+                            <div class="col-12 col-md-4">
                                 <label class="form-label fw-bold">Plan de Internet</label>
                                 <select class="form-select" id="plan_id" required></select>
                             </div>
-                            <div class="col-12 col-md-6">
+                            <div class="col-12 col-md-4">
                                 <label class="form-label fw-bold">Fecha de Corte</label>
                                 <input type="date" class="form-control" id="fecha_corte" required>
                             </div>
@@ -237,7 +224,7 @@
                 </div>
             </div>
 
-            <!-- Tarjeta Desplegable 2: Lista de Clientes Registrados + Barra Buscadora -->
+            <!-- Tarjeta Desplegable 2: Lista de Clientes + Filtro por Zona + Buscador -->
             <div class="card shadow-sm">
                 <div class="card-header bg-caszary-black d-flex flex-wrap justify-content-between align-items-center gap-2">
                     <div class="d-flex align-items-center gap-2" style="cursor: pointer;"
@@ -246,9 +233,12 @@
                         <span class="badge bg-caszary-red">Ocultar / Ver ▼</span>
                     </div>
 
-                    <div class="d-flex align-items-center gap-2 search-box-mobile" style="width: 340px;">
+                    <div class="d-flex flex-wrap align-items-center gap-2 search-box-mobile" style="width: auto;">
+                        <select id="filtroZona" class="form-select form-select-sm" style="width: 180px;">
+                            <option value="todas">📍 Todas las Zonas</option>
+                        </select>
                         <input type="text" id="buscadorClientes" class="form-control form-control-sm"
-                               placeholder="🔍 Buscar nombre, IP o teléfono...">
+                               style="width: 220px;" placeholder="🔍 Buscar nombre, IP o tel...">
                         <span class="badge bg-light text-dark fw-bold text-nowrap" id="contadorClientes">0 Clientes</span>
                     </div>
                 </div>
@@ -258,6 +248,7 @@
                             <thead class="table-dark">
                                 <tr>
                                     <th>ID</th>
+                                    <th>Zona</th>
                                     <th>Nombre</th>
                                     <th>Teléfono</th>
                                     <th>IP Estática</th>
@@ -275,7 +266,45 @@
         </div>
 
         <!-- ========================================================= -->
-        <!-- SECCIÓN 2: NOTIFICACIONES -->
+        <!-- SECCIÓN 2: ZONAS Y COMANDO AUTOMÁTICO PARA CADA MIKROTIK -->
+        <!-- ========================================================= -->
+        <div id="seccion-zonas" class="seccion-panel d-none">
+            <div class="row g-3 g-md-4">
+                <div class="col-12 col-md-4">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-caszary-red fw-bold">➕ Registrar Nueva Zona / Torre</div>
+                        <div class="card-body">
+                            <form id="formNuevaZona">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Nombre de la Zona</label>
+                                    <input type="text" class="form-control" id="zona_nombre" required placeholder="Ej. Zona Centro / Josefinas">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Descripción / Ubicación</label>
+                                    <input type="text" class="form-control" id="zona_desc" placeholder="Ej. Router RB4011 Torre Norte">
+                                </div>
+                                <button type="submit" class="btn btn-caszary-black w-100">Crear Zona</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-8">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-caszary-black fw-bold">📡 Zonas Activas y Comando para Terminal MikroTik</div>
+                        <div class="card-body">
+                            <div class="alert alert-warning small">
+                                <strong>Instrucción:</strong> Copia el comando de cada zona y pégalo una sola vez en <strong>New Terminal</strong> del MikroTik correspondiente. Ese router se sincronizará solo cada 1 minuto sin necesidad de PC esclava.
+                            </div>
+                            <div id="listaZonas" class="d-flex flex-column gap-3"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================================= -->
+        <!-- SECCIÓN 3: NOTIFICACIONES -->
         <!-- ========================================================= -->
         <div id="seccion-notificaciones" class="seccion-panel d-none">
             <div class="card shadow-sm">
@@ -290,7 +319,7 @@
         </div>
 
         <!-- ========================================================= -->
-        <!-- SECCIÓN 3: ADMINISTRADORES -->
+        <!-- SECCIÓN 4: ADMINISTRADORES -->
         <!-- ========================================================= -->
         <div id="seccion-administradores" class="seccion-panel d-none">
             <div class="row g-3 g-md-4">
@@ -324,11 +353,9 @@
         </div>
 
         <!-- ========================================================= -->
-        <!-- SECCIÓN 4: AGREGAR Y MODIFICAR PAQUETES -->
+        <!-- SECCIÓN 5: AGREGAR Y MODIFICAR PAQUETES -->
         <!-- ========================================================= -->
         <div id="seccion-paquetes" class="seccion-panel d-none">
-            
-            <!-- Tarjeta para Agregar Nuevo Plan -->
             <div class="card shadow-sm mb-3 mb-md-4">
                 <div class="card-header bg-caszary-red fw-bold">➕ Agregar Nuevo Paquete / Plan</div>
                 <div class="card-body">
@@ -352,7 +379,6 @@
                 </div>
             </div>
 
-            <!-- Tabla para Modificar Paquetes Existentes -->
             <div class="card shadow-sm">
                 <div class="card-header bg-caszary-black fw-bold">🚀 Configurar Velocidades de Paquetes Existentes</div>
                 <div class="card-body table-responsive">
@@ -388,6 +414,10 @@
                     <div class="modal-body">
                         <input type="hidden" id="edit_id">
                         <div class="mb-3">
+                            <label class="form-label fw-bold">Zona / Router MikroTik</label>
+                            <select class="form-select" id="edit_zona_id" required></select>
+                        </div>
+                        <div class="mb-3">
                             <label class="form-label fw-bold">Nombre Completo</label>
                             <input type="text" class="form-control" id="edit_nombre" required>
                         </div>
@@ -421,6 +451,7 @@
     <script>
         let clientesGlobal = [];
         let planesGlobal = [];
+        let zonasGlobal = [];
         let modalEditarInstance;
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -429,7 +460,6 @@
             cargarAdmins();
         });
 
-        // Toggle Menú Lateral Izquierdo
         document.getElementById('btnToggleMenu').addEventListener('click', () => {
             const sidebar = document.getElementById('sidebar');
             const content = document.getElementById('main-content');
@@ -441,7 +471,6 @@
             }
         });
 
-        // Navegación entre secciones del menú (se cierra automático en móvil)
         function mostrarSeccion(idSeccion, elemento) {
             document.querySelectorAll('.seccion-panel').forEach(sec => sec.classList.add('d-none'));
             document.getElementById(idSeccion).classList.remove('d-none');
@@ -454,19 +483,96 @@
             }
         }
 
-        // Cargar Datos Iniciales
         async function cargarDatos() {
-            const [resPlanes, resClientes] = await Promise.all([
+            const [resPlanes, resClientes, resZonas] = await Promise.all([
                 fetch('/api/planes'),
-                fetch('/api/clientes')
+                fetch('/api/clientes'),
+                fetch('/api/zonas')
             ]);
             planesGlobal = await resPlanes.json();
             clientesGlobal = await resClientes.json();
+            zonasGlobal = await resZonas.json();
 
+            renderSelectZonas();
+            renderListaZonas();
             renderSelectPlanes();
             renderTablaPlanes();
-            renderTablaClientes(clientesGlobal);
+            aplicarFiltrosClientes();
             generarNotificaciones();
+        }
+
+        function renderSelectZonas() {
+            const selectNuevo = document.getElementById('zona_id');
+            const selectEditar = document.getElementById('edit_zona_id');
+            const selectFiltro = document.getElementById('filtroZona');
+            const filtroActual = selectFiltro.value;
+
+            selectNuevo.innerHTML = '<option value="">Selecciona una zona...</option>';
+            selectEditar.innerHTML = '<option value="">Sin zona asignada</option>';
+            selectFiltro.innerHTML = '<option value="todas">📍 Todas las Zonas</option>';
+
+            zonasGlobal.forEach(z => {
+                const opt = `<option value="${z.id}">${z.nombre}</option>`;
+                selectNuevo.innerHTML += opt;
+                selectEditar.innerHTML += opt;
+                selectFiltro.innerHTML += opt;
+            });
+            selectFiltro.value = filtroActual || 'todas';
+        }
+
+        function renderListaZonas() {
+            const contenedor = document.getElementById('listaZonas');
+            contenedor.innerHTML = '';
+
+            if (zonasGlobal.length === 0) {
+                contenedor.innerHTML = '<p class="text-muted mb-0">Aún no has creado zonas. Crea tu primera zona a la izquierda.</p>';
+                return;
+            }
+
+            const baseUrl = window.location.origin;
+
+            zonasGlobal.forEach(z => {
+                const scriptUrl = `${baseUrl}/api/zonas/${z.id}/script.rsc`;
+                const comandoMikrotik = `/ip firewall filter add chain=forward src-address-list=morosos action=drop comment="Corte morosos" place-before=0\n/system scheduler add name="sync_caszary_z${z.id}" interval=1m on-event="/tool fetch url=\\"${scriptUrl}\\" dst-path=caszary.rsc; :delay 2s; /import file-name=caszary.rsc;"`;
+
+                contenedor.innerHTML += `
+                    <div class="border rounded p-3 bg-white">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                <h6 class="fw-bold mb-0 text-danger">📍 ${z.nombre} <span class="badge bg-dark">ID: ${z.id}</span></h6>
+                                <small class="text-muted">${z.descripcion || 'Router MikroTik'}</small>
+                            </div>
+                            <button class="btn btn-outline-danger btn-sm" onclick="eliminarZona(${z.id}, '${z.nombre}')">Eliminar Zona</button>
+                        </div>
+                        <label class="small fw-bold text-secondary">Comando para pegar en New Terminal de este MikroTik:</label>
+                        <textarea class="form-control form-control-sm font-monospace bg-light" rows="3" readonly onclick="this.select()">${comandoMikrotik}</textarea>
+                    </div>
+                `;
+            });
+        }
+
+        document.getElementById('formNuevaZona').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const res = await fetch('/api/zonas', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    nombre: document.getElementById('zona_nombre').value,
+                    descripcion: document.getElementById('zona_desc').value
+                })
+            });
+            if (res.ok) {
+                e.target.reset();
+                cargarDatos();
+            } else {
+                alert('❌ Error al crear la zona (verifica que no esté repetida).');
+            }
+        });
+
+        async function eliminarZona(id, nombre) {
+            if (!confirm(`¿Eliminar la zona "${nombre}"? Los clientes de esta zona quedarán sin zona asignada.`)) return;
+            const res = await fetch(`/api/zonas/${id}`, { method: 'DELETE' });
+            if (res.ok) cargarDatos();
         }
 
         function renderSelectPlanes() {
@@ -484,6 +590,25 @@
             });
         }
 
+        function aplicarFiltrosClientes() {
+            const texto = document.getElementById('buscadorClientes').value.toLowerCase();
+            const zonaSel = document.getElementById('filtroZona').value;
+
+            const filtrados = clientesGlobal.filter(c => {
+                const coincideTexto =
+                    c.nombre.toLowerCase().includes(texto) ||
+                    c.ip_estatica.toLowerCase().includes(texto) ||
+                    c.telefono.toLowerCase().includes(texto);
+                const coincideZona = (zonaSel === 'todas') || (String(c.zona_id) === String(zonaSel));
+                return coincideTexto && coincideZona;
+            });
+
+            renderTablaClientes(filtrados);
+        }
+
+        document.getElementById('buscadorClientes').addEventListener('input', aplicarFiltrosClientes);
+        document.getElementById('filtroZona').addEventListener('change', aplicarFiltrosClientes);
+
         function renderTablaClientes(lista) {
             const tbody = document.getElementById('tablaClientes');
             document.getElementById('contadorClientes').innerText = `${lista.length} Clientes`;
@@ -491,7 +616,10 @@
 
             lista.forEach(c => {
                 const plan = planesGlobal.find(p => p.id === c.plan_id);
+                const zona = zonasGlobal.find(z => z.id === c.zona_id);
                 const nombrePlan = plan ? plan.nombre : 'Sin plan';
+                const nombreZona = zona ? zona.nombre : 'Sin asignar';
+
                 const badgeEstado = c.activo
                     ? '<span class="badge bg-success">Activo</span>'
                     : '<span class="badge bg-danger">Desactivado</span>';
@@ -502,6 +630,7 @@
                 tbody.innerHTML += `
                     <tr>
                         <td>${c.id}</td>
+                        <td><span class="badge bg-danger">${nombreZona}</span></td>
                         <td class="fw-bold">${c.nombre}</td>
                         <td>${c.telefono}</td>
                         <td><span class="badge bg-dark">${c.ip_estatica}</span></td>
@@ -520,27 +649,18 @@
             });
         }
 
-        // Eliminar Cliente (con confirmación)
         async function eliminarCliente(id, nombre) {
-            if (!confirm(`¿Estás seguro de eliminar permanentemente al cliente "${nombre}"? También se eliminará su regla en el MikroTik.`)) {
-                return;
-            }
-            const res = await fetch(`/api/clientes/${id}`, {
-                method: 'DELETE'
-            });
-            if (res.ok) {
-                cargarDatos();
-            } else {
-                alert('❌ Error al eliminar el cliente.');
-            }
+            if (!confirm(`¿Eliminar permanentemente al cliente "${nombre}"?`)) return;
+            const res = await fetch(`/api/clientes/${id}`, { method: 'DELETE' });
+            if (res.ok) cargarDatos();
         }
 
-        // Abrir Modal de Edición
         function abrirModalEditar(id) {
             const cliente = clientesGlobal.find(c => c.id === id);
             if (!cliente) return;
 
             document.getElementById('edit_id').value = cliente.id;
+            document.getElementById('edit_zona_id').value = cliente.zona_id || '';
             document.getElementById('edit_nombre').value = cliente.nombre;
             document.getElementById('edit_telefono').value = cliente.telefono;
             document.getElementById('edit_ip').value = cliente.ip_estatica;
@@ -550,11 +670,12 @@
             modalEditarInstance.show();
         }
 
-        // Guardar Cambios del Cliente Editado
         document.getElementById('formEditarCliente').addEventListener('submit', async (e) => {
             e.preventDefault();
             const id = document.getElementById('edit_id').value;
+            const zonaVal = document.getElementById('edit_zona_id').value;
             const payload = {
+                zona_id: zonaVal ? parseInt(zonaVal) : null,
                 nombre: document.getElementById('edit_nombre').value,
                 telefono: document.getElementById('edit_telefono').value,
                 ip_estatica: document.getElementById('edit_ip').value,
@@ -571,23 +692,9 @@
             if (res.ok) {
                 modalEditarInstance.hide();
                 cargarDatos();
-            } else {
-                alert('❌ Error al actualizar los datos del cliente.');
             }
         });
 
-        // Barra Buscadora en Tiempo Real
-        document.getElementById('buscadorClientes').addEventListener('input', (e) => {
-            const texto = e.target.value.toLowerCase();
-            const filtrados = clientesGlobal.filter(c =>
-                c.nombre.toLowerCase().includes(texto) ||
-                c.ip_estatica.toLowerCase().includes(texto) ||
-                c.telefono.toLowerCase().includes(texto)
-            );
-            renderTablaClientes(filtrados);
-        });
-
-        // Generar Notificaciones por Fecha de Corte
         function generarNotificaciones() {
             const hoy = new Date().toISOString().split('T')[0];
             const lista = document.getElementById('listaNotificaciones');
@@ -597,9 +704,12 @@
             clientesGlobal.forEach(c => {
                 if (c.fecha_corte <= hoy) {
                     conteo++;
+                    const zona = zonasGlobal.find(z => z.id === c.zona_id);
+                    const zName = zona ? zona.nombre : 'Sin zona';
                     lista.innerHTML += `
                         <li class="list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2 list-group-item-danger">
                             <div>
+                                <span class="badge bg-dark me-1">${zName}</span>
                                 <strong>⚠️ ${c.nombre}</strong> (IP: ${c.ip_estatica}) — Corte: <strong>${c.fecha_corte}</strong>
                             </div>
                             ${c.activo ? `<button class="btn btn-sm btn-caszary-red" onclick="cambiarEstado(${c.id})">Cortar Servicio</button>` : '<span class="badge bg-dark">Ya Cortado</span>'}
@@ -614,7 +724,6 @@
             }
         }
 
-        // Agregar Nuevo Plan
         document.getElementById('formNuevoPlan').addEventListener('submit', async (e) => {
             e.preventDefault();
             const payload = {
@@ -631,12 +740,9 @@
                 alert('✅ Nuevo plan agregado correctamente.');
                 e.target.reset();
                 cargarDatos();
-            } else {
-                alert('❌ Error al agregar el nuevo plan.');
             }
         });
 
-        // Renderizar Tabla para Modificar Paquetes
         function renderTablaPlanes() {
             const tbody = document.getElementById('tablaPlanes');
             tbody.innerHTML = '';
@@ -667,15 +773,15 @@
                 body: JSON.stringify(payload)
             });
             if (res.ok) {
-                alert('✅ Paquete actualizado. El agente esclavo sincronizará los nuevos megas en 5 segundos.');
+                alert('✅ Paquete actualizado. Los MikroTiks aplicarán los nuevos megas en el siguiente ciclo.');
                 cargarDatos();
             }
         }
 
-        // Registrar Nuevo Cliente
         document.getElementById('formNuevoCliente').addEventListener('submit', async (e) => {
             e.preventDefault();
             const payload = {
+                zona_id: parseInt(document.getElementById('zona_id').value),
                 nombre: document.getElementById('nombre').value,
                 telefono: document.getElementById('telefono').value,
                 ip_estatica: document.getElementById('ip_estatica').value,
@@ -694,15 +800,11 @@
             }
         });
 
-        // Activar / Desactivar Cliente
         async function cambiarEstado(id) {
-            await fetch(`/api/clientes/${id}/estado`, {
-                method: 'PATCH'
-            });
+            await fetch(`/api/clientes/${id}/estado`, { method: 'PATCH' });
             cargarDatos();
         }
 
-        // Cargar y Crear Administradores
         async function cargarAdmins() {
             try {
                 const res = await fetch('/api/administradores');
@@ -737,7 +839,7 @@
                 e.target.reset();
                 cargarAdmins();
             } else {
-                alert('❌ Error al crear administrador (el usuario ya existe).');
+                alert('❌ Error al crear administrador.');
             }
         });
     </script>
