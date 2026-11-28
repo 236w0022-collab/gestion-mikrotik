@@ -1,55 +1,41 @@
 from pydantic import BaseModel
-from datetime import date
 from typing import Optional
 
-# --- Esquemas de Planes ---
-class PlanBase(BaseModel):
-    nombre: str
-    velocidad_bajada: int
-    velocidad_subida: int
-
-class PlanResponse(PlanBase):
+class PlanResponse(BaseModel):
     id: int
+    nombre: str
+    velocidad_subida: str
+    velocidad_bajada: str
 
     class Config:
         from_attributes = True
 
-# --- Esquemas de Clientes ---
-class ClienteBase(BaseModel):
+class ClienteCreate(BaseModel):
     nombre: str
-    telefono: Optional[str] = None
+    telefono: str
     ip_estatica: str
-    fecha_corte: date
+    fecha_corte: str
     plan_id: int
-    activo: Optional[bool] = True
-
-class ClienteCreate(ClienteBase):
-    pass
+    zona_id: Optional[int] = None
+    activo: bool = True
 
 class ClienteUpdate(BaseModel):
     nombre: Optional[str] = None
     telefono: Optional[str] = None
     ip_estatica: Optional[str] = None
-    fecha_corte: Optional[date] = None
+    fecha_corte: Optional[str] = None
     plan_id: Optional[int] = None
-    activo: Optional[bool] = None
+    zona_id: Optional[int] = None
 
-class ClienteResponse(ClienteBase):
+class ClienteResponse(BaseModel):
     id: int
+    nombre: str
+    telefono: str
+    ip_estatica: str
+    fecha_corte: str
+    activo: bool
+    plan_id: int
+    zona_id: Optional[int] = None
 
     class Config:
         from_attributes = True
-
-# --- Esquemas de Usuarios ---
-class UserBase(BaseModel):
-    username: str
-
-class UserCreate(UserBase):
-    password: str
-
-class UserResponse(UserBase):
-    id: int
-
-    class Config:
-        from_attributes = True
-        
