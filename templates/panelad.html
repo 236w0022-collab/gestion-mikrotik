@@ -294,7 +294,7 @@
                         <div class="card-header bg-caszary-black fw-bold">📡 Zonas Activas y Comando para Terminal MikroTik</div>
                         <div class="card-body">
                             <div class="alert alert-warning small">
-                                <strong>Instrucción:</strong> Copia el comando de cada zona y pégalo una sola vez en <strong>New Terminal</strong> del MikroTik correspondiente. Ese router se sincronizará solo cada 1 minuto sin necesidad de PC esclava.
+                                <strong>Instrucción:</strong> Copia el comando de cada zona y pégalo una sola vez en <strong>New Terminal</strong> del MikroTik correspondiente. Incluye sincronización cada 30 segundos, pruebas de Ping y redirección de avisos de corte/pago.
                             </div>
                             <div id="listaZonas" class="d-flex flex-column gap-3"></div>
                         </div>
@@ -447,15 +447,40 @@
         </div>
     </div>
 
+    <!-- ========================================================= -->
+    <!-- MODAL RESULTADO DE PING AL MÓDEM -->
+    <!-- ========================================================= -->
+    <div class="modal fade" id="modalPingResultado" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-caszary-black">
+                    <h5 class="modal-title fw-bold">📡 Prueba de Conexión (Ping al Módem)</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body text-center py-4" id="contenidoModalPing">
+                    <div class="spinner-border text-danger mb-3" role="status"></div>
+                    <p class="fw-bold mb-1">Enviando solicitud al MikroTik de la zona...</p>
+                    <small class="text-muted">Esperando respuesta del módem (puede tardar hasta 30 segundos).</small>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         let clientesGlobal = [];
         let planesGlobal = [];
         let zonasGlobal = [];
         let modalEditarInstance;
+        let modalPingInstance;
+        let intervaloPing = null;
 
         document.addEventListener('DOMContentLoaded', () => {
             modalEditarInstance = new bootstrap.Modal(document.getElementById('modalEditarCliente'));
+            modalPingInstance = new bootstrap.Modal(document.getElementById('modalPingResultado'));
             cargarDatos();
             cargarAdmins();
         });
@@ -530,10 +555,17 @@
             }
 
             const baseUrl = window.location.origin;
+            const dominioHost = window.location.hostname;
 
             zonasGlobal.forEach(z => {
                 const scriptUrl = `${baseUrl}/api/zonas/${z.id}/script.rsc`;
-                const comandoMikrotik = `/ip firewall filter add chain=forward src-address-list=morosos action=drop comment="Corte morosos" place-before=0\n/system scheduler add name="sync_caszary_z${z.id}" interval=1m on-event="/tool fetch url=\\"${scriptUrl}\\" dst-path=caszary.rsc; :delay 2s; /import file-name=caszary.rsc;"`;
+                const comandoMikrotik =
+`/ip firewall address-list add list="permitidos_wisp" address="${dominioHost}" comment="Permitir portal CASZARY"
+/ip firewall nat add chain=dstnat src-address-list=morosos dst-address-list=!permitidos_wisp protocol=tcp dst-port=80 action=redirect to-ports=8080 comment="Redirigir cortados"
+/ip proxy set enabled=yes port=8080
+/ip proxy access add dst-host=!${dominioHost} action=deny redirect-to="${dominioHost}/servicio-cortado"
+/ip firewall filter add chain=forward src-address-list=morosos dst-address-list=!permitidos_wisp action=drop comment="Corte morosos" place-before=0
+/system scheduler add name="sync_caszary_z${z.id}" interval=30s on-event="/tool fetch url=\\"${scriptUrl}\\" dst-path=caszary.rsc; :delay 2s; /import file-name=caszary.rsc;"`;
 
                 contenedor.innerHTML += `
                     <div class="border rounded p-3 bg-white">
@@ -544,8 +576,8 @@
                             </div>
                             <button class="btn btn-outline-danger btn-sm" onclick="eliminarZona(${z.id}, '${z.nombre}')">Eliminar Zona</button>
                         </div>
-                        <label class="small fw-bold text-secondary">Comando para pegar en New Terminal de este MikroTik:</label>
-                        <textarea class="form-control form-control-sm font-monospace bg-light" rows="3" readonly onclick="this.select()">${comandoMikrotik}</textarea>
+                        <label class="small fw-bold text-secondary">Comando completo para pegar en New Terminal de este MikroTik:</label>
+                        <textarea class="form-control form-control-sm font-monospace bg-light" rows="4" readonly onclick="this.select()">${comandoMikrotik}</textarea>
                     </div>
                 `;
             });
@@ -565,12 +597,12 @@
                 e.target.reset();
                 cargarDatos();
             } else {
-                alert('❌ Error al crear la zona (verifica que no esté repetida).');
+                alert('❌ Error al crear la zona.');
             }
         });
 
         async function eliminarZona(id, nombre) {
-            if (!confirm(`¿Eliminar la zona "${nombre}"? Los clientes de esta zona quedarán sin zona asignada.`)) return;
+            if (!confirm(`¿Eliminar la zona "${nombre}"?`)) return;
             const res = await fetch(`/api/zonas/${id}`, { method: 'DELETE' });
             if (res.ok) cargarDatos();
         }
@@ -639,6 +671,7 @@
                         <td>${badgeEstado}</td>
                         <td>
                             <div class="d-flex gap-1">
+                                <button class="btn btn-info btn-sm text-white fw-bold" onclick="hacerPingCliente(${c.id}, '${c.nombre}', '${c.ip_estatica}')">📡 Hacer Ping</button>
                                 <button class="btn btn-warning btn-sm fw-bold" onclick="abrirModalEditar(${c.id})">Editar</button>
                                 ${btnEstado}
                                 <button class="btn btn-danger btn-sm fw-bold" onclick="eliminarCliente(${c.id}, '${c.nombre}')">Eliminar</button>
@@ -647,6 +680,59 @@
                     </tr>
                 `;
             });
+        }
+
+        // Ejecutar Ping al Módem del Cliente
+        async function hacerPingCliente(id, nombre, ip) {
+            if (intervaloPing) clearInterval(intervaloPing);
+
+            const contenedor = document.getElementById('contenidoModalPing');
+            contenedor.innerHTML = `
+                <div class="spinner-border text-danger mb-3" role="status"></div>
+                <h6 class="fw-bold">Probando conexión con ${nombre} (${ip})</h6>
+                <p class="text-muted small mb-0">Esperando que el MikroTik ejecute el ping y reporte el resultado...</p>
+            `;
+            modalPingInstance.show();
+
+            const res = await fetch(`/api/clientes/${id}/ping`, { method: 'POST' });
+            if (!res.ok) {
+                const err = await res.json();
+                contenedor.innerHTML = `<div class="alert alert-danger mb-0">⚠️ ${err.detail || 'No se pudo iniciar el ping.'}</div>`;
+                return;
+            }
+
+            const data = await res.json();
+            const pingId = data.ping_id;
+            let intentos = 0;
+
+            intervaloPing = setInterval(async () => {
+                intentos++;
+                const check = await fetch(`/api/ping/${pingId}`);
+                if (check.ok) {
+                    const info = await check.json();
+                    if (info.estado === 'exitoso') {
+                        clearInterval(intervaloPing);
+                        contenedor.innerHTML = `
+                            <div class="alert alert-success fw-bold fs-6 mb-2">${info.resultado}</div>
+                            <small class="text-muted">Cliente: ${nombre} | IP: ${ip}</small>
+                        `;
+                    } else if (info.estado === 'fallido') {
+                        clearInterval(intervaloPing);
+                        contenedor.innerHTML = `
+                            <div class="alert alert-danger fw-bold fs-6 mb-2">${info.resultado}</div>
+                            <small class="text-muted">Cliente: ${nombre} | IP: ${ip}</small>
+                        `;
+                    }
+                }
+                if (intentos >= 15) {
+                    clearInterval(intervaloPing);
+                    contenedor.innerHTML = `
+                        <div class="alert alert-warning mb-0">
+                            ⏱️ El MikroTik de esta zona no respondió a tiempo. Verifica que el router tenga internet y el scheduler activo.
+                        </div>
+                    `;
+                }
+            }, 2500);
         }
 
         async function eliminarCliente(id, nombre) {

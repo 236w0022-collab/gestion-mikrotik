@@ -1,4 +1,5 @@
 import os
+from datetime import datetime, timedelta
 from fastapi import FastAPI, Depends, Form, Request, status, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse, PlainTextResponse
 from fastapi.templating import Jinja2Templates
@@ -12,13 +13,22 @@ import models
 import schemas
 from database import engine, get_db
 
-# Crear tablas nuevas si no existen
 models.Base.metadata.create_all(bind=engine)
 
-# Agregar columna zona_id a clientes existentes en PostgreSQL sin perder datos
+# Crear tabla de solicitudes de ping y columna zona_id si no existen
 with engine.connect() as conn:
     try:
         conn.execute(text("ALTER TABLE clientes ADD COLUMN IF NOT EXISTS zona_id INTEGER REFERENCES zonas(id);"))
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS ping_requests (
+                id SERIAL PRIMARY KEY,
+                cliente_id INTEGER,
+                zona_id INTEGER,
+                ip_objetivo VARCHAR,
+                estado VARCHAR DEFAULT 'pendiente',
+                resultado TEXT DEFAULT ''
+            );
+        """))
         conn.commit()
     except Exception:
         pass
@@ -30,7 +40,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 
-# --- MODELOS PYDANTIC ADICIONALES ---
+# --- MODELOS PYDANTIC ---
 
 class PlanCreateOrUpdate(BaseModel):
     nombre: str
@@ -97,6 +107,116 @@ def logout():
     return response
 
 
+# --- PANTALLAS DE AVISO PARA EL CLIENTE (REDIRECCIÓN MIKROTIK) ---
+
+@app.get("/aviso-pago", response_class=HTMLResponse)
+def pantalla_aviso_pago():
+    return """
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Recordatorio de Pago - CASZARY TELECOMUNICACIONES</title>
+        <style>
+            body { font-family: Arial, sans-serif; background: #141414; color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; padding: 15px; }
+            .box { background: #fff; color: #141414; max-width: 480px; padding: 30px; border-radius: 10px; border-top: 8px solid #f59e0b; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+            h2 { color: #d97706; margin-top: 10px; }
+            p { font-size: 16px; line-height: 1.5; }
+            .btn { display: inline-block; margin-top: 20px; padding: 12px 24px; background: #141414; color: #fff; text-decoration: none; border-radius: 6px; font-weight: bold; }
+        </style>
+    </head>
+    <body>
+        <div class="box">
+            <img src="/static/logo_caszary.jpg" alt="CASZARY" style="max-width: 180px;">
+            <h2>⚠️ Recordatorio de Próximo Corte</h2>
+            <p>Estimado cliente, le informamos que <strong>su fecha de corte está muy próxima</strong>.</p>
+            <p>Por favor realice su pago a tiempo para evitar la suspensión automática de su servicio de internet.</p>
+            <p style="font-size: 14px; color: #555;">Si ya realizó su pago, haga caso omiso a este aviso.</p>
+            <a href="http://google.com" class="btn">Entendido, continuar navegando</a>
+        </div>
+    </body>
+    </html>
+    """
+
+
+@app.get("/servicio-cortado", response_class=HTMLResponse)
+def pantalla_servicio_cortado():
+    return """
+    <!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Servicio Suspendido - CASZARY TELECOMUNICACIONES</title>
+        <style>
+            body { font-family: Arial, sans-serif; background: #141414; color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; padding: 15px; }
+            .box { background: #fff; color: #141414; max-width: 480px; padding: 30px; border-radius: 10px; border-top: 8px solid #D91E2A; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+            h2 { color: #D91E2A; margin-top: 10px; }
+            p { font-size: 16px; line-height: 1.5; }
+            .badge { background: #D91E2A; color: #fff; padding: 8px 16px; border-radius: 5px; font-weight: bold; display: inline-block; margin-top: 10px; }
+        </style>
+    </head>
+    <body>
+        <div class="box">
+            <img src="/static/logo_caszary.jpg" alt="CASZARY" style="max-width: 180px;">
+            <h2>🚫 Servicio Suspendido por Falta de Pago</h2>
+            <p>Estimado cliente, su servicio de internet ha sido <strong>cortado temporalmente</strong> debido a que presenta un saldo vencido.</p>
+            <p>Para reactivar su conexión de inmediato, por favor comuníquese con administración y envíe su comprobante de pago.</p>
+            <div class="badge">CASZARY TELECOMUNICACIONES</div>
+        </div>
+    </body>
+    </html>
+    """
+
+
+# --- API DE PRUEBA DE PING REMOTO AL MÓDEM DEL CLIENTE ---
+
+@app.post("/api/clientes/{cliente_id}/ping")
+def solicitar_ping_cliente(cliente_id: int, db: Session = Depends(get_db)):
+    cliente = db.query(models.Cliente).filter(models.Cliente.id == cliente_id).first()
+    if not cliente:
+        raise HTTPException(status_code=404, detail="Cliente no encontrado")
+    if not cliente.zona_id:
+        raise HTTPException(status_code=400, detail="Este cliente no tiene una Zona / MikroTik asignada")
+
+    # Limpiar solicitudes viejas de este cliente y crear una nueva
+    db.execute(text("DELETE FROM ping_requests WHERE cliente_id = :cid"), {"cid": cliente_id})
+    res = db.execute(
+        text("INSERT INTO ping_requests (cliente_id, zona_id, ip_objetivo, estado) VALUES (:cid, :zid, :ip, 'pendiente') RETURNING id"),
+        {"cid": cliente.id, "zid": cliente.zona_id, "ip": cliente.ip_estatica.strip()}
+    )
+    ping_id = res.fetchone()[0]
+    db.commit()
+    return {"ping_id": ping_id, "estado": "pendiente", "ip": cliente.ip_estatica}
+
+
+@app.get("/api/ping/{ping_id}")
+def consultar_estado_ping(ping_id: int, db: Session = Depends(get_db)):
+    row = db.execute(text("SELECT estado, resultado, ip_objetivo FROM ping_requests WHERE id = :pid"), {"pid": ping_id}).fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="Solicitud de ping no encontrada")
+    return {"estado": row[0], "resultado": row[1], "ip": row[2]}
+
+
+@app.get("/api/ping/{ping_id}/reportar", response_class=PlainTextResponse)
+def reportar_resultado_ping(ping_id: int, recibidos: int = 0, db: Session = Depends(get_db)):
+    """El MikroTik llama a esta URL cuando termina el ping al módem del cliente."""
+    if recibidos > 0:
+        estado = "exitoso"
+        resultado = f"✅ Ping exitoso ({recibidos}/4 paquetes recibidos). El módem tiene conexión."
+    else:
+        estado = "fallido"
+        resultado = "❌ Sin respuesta (0/4 paquetes recibidos). El módem está apagado o sin enlace."
+
+    db.execute(
+        text("UPDATE ping_requests SET estado = :est, resultado = :res WHERE id = :pid"),
+        {"est": estado, "res": resultado, "pid": ping_id}
+    )
+    db.commit()
+    return "OK"
+
+
 # --- API REST DE ZONAS / MIKROTIKS ---
 
 @app.get("/api/zonas")
@@ -122,29 +242,32 @@ def eliminar_zona(zona_id: int, db: Session = Depends(get_db)):
     zona = db.query(models.Zona).filter(models.Zona.id == zona_id).first()
     if not zona:
         raise HTTPException(status_code=404, detail="Zona no encontrada")
-    # Desvincular clientes de esa zona antes de borrarla
     db.query(models.Cliente).filter(models.Cliente.zona_id == zona_id).update({"zona_id": None})
     db.delete(zona)
     db.commit()
     return {"mensaje": "Zona eliminada"}
 
 
-# --- ENDPOINT DE SINCRONIZACIÓN DIRECTA PARA MIKROTIK (/tool fetch) ---
+# --- SCRIPT DINÁMICO PARA MIKROTIK (VELOCIDADES, CORTES, AVISOS Y PING) ---
 
 @app.get("/api/zonas/{zona_id}/script.rsc", response_class=PlainTextResponse)
-def generar_script_mikrotik(zona_id: int, db: Session = Depends(get_db)):
-    """Genera comandos nativos de RouterOS solo para los clientes de la zona indicada."""
+def generar_script_mikrotik(zona_id: int, request: Request, db: Session = Depends(get_db)):
     zona = db.query(models.Zona).filter(models.Zona.id == zona_id).first()
     if not zona:
         return "# Error: Zona no encontrada\n"
 
+    base_url = str(request.base_url).rstrip("/")
     clientes = db.query(models.Cliente).filter(models.Cliente.zona_id == zona_id).all()
     planes = {p.id: p for p in db.query(models.Plan).all()}
+
+    hoy = datetime.now().date()
+    limite_aviso = hoy + timedelta(days=3)
 
     lineas = [
         f"# Sincronizacion automatica CASZARY - Zona: {zona.nombre}",
         '/queue simple remove [find comment="WISP_AUTO"]',
         '/ip firewall address-list remove [find list="morosos" comment="WISP_AUTO"]',
+        '/ip firewall address-list remove [find list="aviso_pago" comment="WISP_AUTO"]',
     ]
 
     for c in clientes:
@@ -161,10 +284,31 @@ def generar_script_mikrotik(zona_id: int, db: Session = Depends(get_db)):
             lineas.append(
                 f'/queue simple add name="Cliente_{nombre_limpio}_{c.id}" target="{ip}/32" max-limit="{subida}/{bajada}" comment="WISP_AUTO"'
             )
+            # Verificar si faltan 3 dias o menos para su fecha de corte
+            try:
+                f_corte = datetime.strptime(c.fecha_corte, "%Y-%m-%d").date()
+                if hoy <= f_corte <= limite_aviso:
+                    lineas.append(
+                        f'/ip firewall address-list add list="aviso_pago" address="{ip}" comment="WISP_AUTO"'
+                    )
+            except Exception:
+                pass
         else:
             lineas.append(
                 f'/ip firewall address-list add list="morosos" address="{ip}" comment="WISP_AUTO"'
             )
+
+    # Revisar si el administrador pidio hacer Ping a algun cliente de esta zona
+    pings_pendientes = db.execute(
+        text("SELECT id, ip_objetivo FROM ping_requests WHERE zona_id = :zid AND estado = 'pendiente'"),
+        {"zid": zona_id}
+    ).fetchall()
+
+    for p in pings_pendientes:
+        pid, ip_obj = p[0], p[1]
+        lineas.append(
+            f':local rx [/ping {ip_obj} count=4]; /tool fetch url="{base_url}/api/ping/{pid}/reportar?recibidos=$rx" keep-result=no;'
+        )
 
     return "\n".join(lineas) + "\n"
 
