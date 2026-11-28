@@ -778,6 +778,9 @@
             if (res.ok) {
                 modalEditarInstance.hide();
                 cargarDatos();
+            } else {
+                const err = await res.text();
+                alert('❌ Error al editar cliente: ' + err);
             }
         });
 
@@ -881,8 +884,12 @@
                 body: JSON.stringify(payload)
             });
             if (res.ok) {
+                alert('✅ Cliente guardado correctamente.');
                 e.target.reset();
                 cargarDatos();
+            } else {
+                const errorText = await res.text();
+                alert('❌ Error al guardar cliente: ' + errorText);
             }
         });
 

@@ -15,23 +15,19 @@ from database import engine, get_db
 
 models.Base.metadata.create_all(bind=engine)
 
-# Crear tabla de solicitudes de ping y columna zona_id si no existen
-with engine.connect() as conn:
-    try:
-        conn.execute(text("ALTER TABLE clientes ADD COLUMN IF NOT EXISTS zona_id INTEGER REFERENCES zonas(id);"))
-        conn.execute(text("""
-            CREATE TABLE IF NOT EXISTS ping_requests (
-                id SERIAL PRIMARY KEY,
-                cliente_id INTEGER,
-                zona_id INTEGER,
-                ip_objetivo VARCHAR,
-                estado VARCHAR DEFAULT 'pendiente',
-                resultado TEXT DEFAULT ''
-            );
-        """))
-        conn.commit()
-    except Exception:
-        pass
+# Agregar columna zona_id y tabla ping_requests con commit asegurado
+with engine.begin() as conn:
+    conn.execute(text("ALTER TABLE clientes ADD COLUMN IF NOT EXISTS zona_id INTEGER;"))
+    conn.execute(text("""
+        CREATE TABLE IF NOT EXISTS ping_requests (
+            id SERIAL PRIMARY KEY,
+            cliente_id INTEGER,
+            zona_id INTEGER,
+            ip_objetivo VARCHAR,
+            estado VARCHAR DEFAULT 'pendiente',
+            resultado TEXT DEFAULT ''
+        );
+    """))
 
 app = FastAPI(title="Panel WISP - CASZARY TELECOMUNICACIONES")
 
@@ -180,7 +176,6 @@ def solicitar_ping_cliente(cliente_id: int, db: Session = Depends(get_db)):
     if not cliente.zona_id:
         raise HTTPException(status_code=400, detail="Este cliente no tiene una Zona / MikroTik asignada")
 
-    # Limpiar solicitudes viejas de este cliente y crear una nueva
     db.execute(text("DELETE FROM ping_requests WHERE cliente_id = :cid"), {"cid": cliente_id})
     res = db.execute(
         text("INSERT INTO ping_requests (cliente_id, zona_id, ip_objetivo, estado) VALUES (:cid, :zid, :ip, 'pendiente') RETURNING id"),
@@ -201,7 +196,6 @@ def consultar_estado_ping(ping_id: int, db: Session = Depends(get_db)):
 
 @app.get("/api/ping/{ping_id}/reportar", response_class=PlainTextResponse)
 def reportar_resultado_ping(ping_id: int, recibidos: int = 0, db: Session = Depends(get_db)):
-    """El MikroTik llama a esta URL cuando termina el ping al módem del cliente."""
     if recibidos > 0:
         estado = "exitoso"
         resultado = f"✅ Ping exitoso ({recibidos}/4 paquetes recibidos). El módem tiene conexión."
@@ -284,7 +278,6 @@ def generar_script_mikrotik(zona_id: int, request: Request, db: Session = Depend
             lineas.append(
                 f'/queue simple add name="Cliente_{nombre_limpio}_{c.id}" target="{ip}/32" max-limit="{subida}/{bajada}" comment="WISP_AUTO"'
             )
-            # Verificar si faltan 3 dias o menos para su fecha de corte
             try:
                 f_corte = datetime.strptime(c.fecha_corte, "%Y-%m-%d").date()
                 if hoy <= f_corte <= limite_aviso:
@@ -298,7 +291,6 @@ def generar_script_mikrotik(zona_id: int, request: Request, db: Session = Depend
                 f'/ip firewall address-list add list="morosos" address="{ip}" comment="WISP_AUTO"'
             )
 
-    # Revisar si el administrador pidio hacer Ping a algun cliente de esta zona
     pings_pendientes = db.execute(
         text("SELECT id, ip_objetivo FROM ping_requests WHERE zona_id = :zid AND estado = 'pendiente'"),
         {"zid": zona_id}
