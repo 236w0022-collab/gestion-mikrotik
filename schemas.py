@@ -1,11 +1,11 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, Union
 
 class PlanResponse(BaseModel):
     id: int
     nombre: str
-    velocidad_subida: str
-    velocidad_bajada: str
+    velocidad_subida: Union[str, int]
+    velocidad_bajada: Union[str, int]
 
     class Config:
         from_attributes = True
