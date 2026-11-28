@@ -279,7 +279,7 @@ def generar_script_mikrotik(zona_id: int, request: Request, db: Session = Depend
                 f'/queue simple add name="Cliente_{nombre_limpio}_{c.id}" target="{ip}/32" max-limit="{subida}/{bajada}" comment="WISP_AUTO"'
             )
             try:
-                f_corte = datetime.strptime(c.fecha_corte, "%Y-%m-%d").date()
+                f_corte = datetime.strptime(str(c.fecha_corte), "%Y-%m-%d").date()
                 if hoy <= f_corte <= limite_aviso:
                     lineas.append(
                         f'/ip firewall address-list add list="aviso_pago" address="{ip}" comment="WISP_AUTO"'
